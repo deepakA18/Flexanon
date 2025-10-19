@@ -67,51 +67,45 @@ export async function getClient(): Promise<PoolClient> {
 export async function initDatabase() {
   console.log('Initializing database schema...');
 
-  // Create tables first
-  const createTables = `
-    -- Share tokens table (off-chain data only)
-    -- On-chain: merkle root, owner, version, revoked
-    -- Off-chain: proofs, revealed data, token mapping
-    CREATE TABLE IF NOT EXISTS share_tokens (
-      token_id VARCHAR(8) PRIMARY KEY,
-      owner_address VARCHAR(44) NOT NULL,       -- Solana wallet (base58)
-      commitment_address VARCHAR(44) NOT NULL,  -- Solana PDA (base58)
-      commitment_version INT NOT NULL,          -- Version at creation time
-      revealed_leaves JSONB NOT NULL,           -- Which leaves to show
-      proof_data JSONB NOT NULL,                -- Merkle proofs
-      metadata JSONB,                           -- Off-chain only metadata
-      revoked BOOLEAN DEFAULT FALSE,            -- Off-chain revocation
-      created_at TIMESTAMP DEFAULT NOW()
-    );
-
-    -- No need for wallet_nonces or sessions anymore
-    -- Signature verification happens on-chain
-
-    -- Analytics (optional)
-    CREATE TABLE IF NOT EXISTS share_views (
-      id SERIAL PRIMARY KEY,
-      token_id VARCHAR(8) NOT NULL,
-      viewer_ip VARCHAR(45),
-      user_agent TEXT,
-      viewed_at TIMESTAMP DEFAULT NOW()
-    );
-  `;
-
-  // Create indexes separately
-  const createIndexes = `
-    -- Indexes for share_tokens
-    CREATE INDEX IF NOT EXISTS idx_owner_address ON share_tokens(owner_address);
-    CREATE INDEX IF NOT EXISTS idx_commitment_address ON share_tokens(commitment_address);
-    CREATE INDEX IF NOT EXISTS idx_created_at ON share_tokens(created_at);
-
-    -- Indexes for share_views
-    CREATE INDEX IF NOT EXISTS idx_token_id ON share_views(token_id);
-    CREATE INDEX IF NOT EXISTS idx_viewed_at ON share_views(viewed_at);
-  `;
-
   try {
+    // Create tables
+    const createTables = `
+      -- Share tokens table (off-chain data only)
+      CREATE TABLE IF NOT EXISTS share_tokens (
+        token_id VARCHAR(8) PRIMARY KEY,
+        owner_address VARCHAR(44) NOT NULL,
+        commitment_address VARCHAR(44) NOT NULL,
+        commitment_version INT NOT NULL,
+        revealed_leaves JSONB NOT NULL,
+        proof_data JSONB NOT NULL,
+        metadata JSONB,
+        revoked BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      -- Analytics
+      CREATE TABLE IF NOT EXISTS share_views (
+        id SERIAL PRIMARY KEY,
+        token_id VARCHAR(8) NOT NULL,
+        viewer_ip VARCHAR(45),
+        user_agent TEXT,
+        viewed_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+
     await query(createTables);
+
+    // Create indexes
+    const createIndexes = `
+      CREATE INDEX IF NOT EXISTS idx_owner_address ON share_tokens(owner_address);
+      CREATE INDEX IF NOT EXISTS idx_commitment_address ON share_tokens(commitment_address);
+      CREATE INDEX IF NOT EXISTS idx_created_at ON share_tokens(created_at);
+      CREATE INDEX IF NOT EXISTS idx_token_id_views ON share_views(token_id);
+      CREATE INDEX IF NOT EXISTS idx_viewed_at ON share_views(viewed_at);
+    `;
+
     await query(createIndexes);
+
     console.log('✅ Database schema initialized successfully');
   } catch (error) {
     console.error('❌ Failed to initialize database:', error);

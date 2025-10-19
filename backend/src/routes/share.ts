@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getZerionClient } from '../lib/zerion';
+import { getZerionClientOrMock } from '../lib/mock-zerion';
 import { getSolanaClient } from '../lib/solana';
 import SparseMerkleTree from '../lib/merkle';
 import { PublicKey } from '@solana/web3.js';
@@ -96,7 +96,7 @@ router.post('/generate', async (req: Request, res: Response) => {
 
     // 2. Fetch portfolio from Zerion
     console.log(`📊 Fetching portfolio from Zerion...`);
-    const zerionClient = getZerionClient();
+    const zerionClient = getZerionClientOrMock();
     const portfolio = await zerionClient.getPortfolio(wallet_address, chain);
 
     if (!portfolio || portfolio.assets.length === 0) {
