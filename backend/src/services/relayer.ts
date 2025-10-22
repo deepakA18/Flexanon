@@ -196,7 +196,7 @@ export class RelayerService {
       };
 
       const tx = await this.program.methods
-        .commitRootViaRelayer(userPubkey, merkleRoot, anchorMetadata)
+        .commitRoot(userPubkey, merkleRoot, anchorMetadata)
         .accounts({
           commitment: commitmentPDA,
           relayer: this.relayerKeypair.publicKey,

@@ -1,7 +1,7 @@
 #![allow(unexpected_cfgs)]
 use anchor_lang::prelude::*;
 
-declare_id!("DHRt9FMkbU6pvuMLZo4voWwiFJmYeD1rvrhK7GFizqwp");
+declare_id!("79WokvRaKKnw4Ay73s6HGMn9ZJVcxBmsufEGH8imxTAn");
 
 #[program]
 pub mod flexanon {
@@ -9,7 +9,7 @@ pub mod flexanon {
 
     
     pub fn commit_root(
-        ctx: Context<CommitRootViaRelayer>,
+        ctx: Context<CommitRoot>,
         user_wallet: Pubkey,
         merkle_root: [u8; 32],
         metadata: CommitMetadata,
@@ -69,26 +69,8 @@ pub mod flexanon {
 }
 
 #[derive(Accounts)]
-pub struct CommitRoot<'info> {
-    #[account(
-        init_if_needed,
-        payer = owner,
-        space = 8 + ShareCommitment::INIT_SPACE,
-        seeds = [b"commitment", owner.key().as_ref()],
-        bump
-    )]
-    pub commitment: Account<'info, ShareCommitment>,
-    
-    #[account(mut)]
-    pub owner: Signer<'info>,
-    
-    pub system_program: Program<'info, System>,
-}
-
-
-#[derive(Accounts)]
 #[instruction(user_wallet: Pubkey)]
-pub struct CommitRootViaRelayer<'info> {
+pub struct CommitRoot<'info> {
     #[account(
         init_if_needed,
         payer = relayer,
