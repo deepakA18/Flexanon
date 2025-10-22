@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getZerionClientOrMock } from '../lib/mock-zerion';
 import { getSolanaClient } from '../lib/solana';
+import { verifyWalletOwnership, isSignatureTimestampValid } from '../lib/ownership';
 import SparseMerkleTree from '../lib/merkle';
 import { PublicKey } from '@solana/web3.js';
 import { 
@@ -22,21 +23,38 @@ const router = Router();
 /**
  * POST /api/share/generate
  * Generate a new share link
- * No authentication required - verification happens on-chain
+ * REQUIRES: Wallet signature to prove ownership
  */
 router.post('/generate', async (req: Request, res: Response) => {
   try {
     const {
       wallet_address,
+      signature,
+      message,
+      timestamp,
       commitment_address,
       commitment_version,
       chain = 'solana',
       reveal_preferences,
-    }: GenerateShareRequest = req.body;
+    } = req.body;
 
-    // Validate inputs
+    // Validate required fields
     if (!wallet_address) {
       return res.status(400).json({ error: 'wallet_address is required' });
+    }
+
+    if (!signature) {
+      return res.status(400).json({ 
+        error: 'signature is required - please sign the ownership message with your wallet' 
+      });
+    }
+
+    if (!message) {
+      return res.status(400).json({ error: 'message is required' });
+    }
+
+    if (!timestamp) {
+      return res.status(400).json({ error: 'timestamp is required' });
     }
 
     if (!commitment_address) {
@@ -53,6 +71,41 @@ router.post('/generate', async (req: Request, res: Response) => {
 
     console.log(`📊 Generating share link for ${wallet_address}...`);
 
+    // 1. CRITICAL: Verify wallet ownership via signature
+    console.log(`🔐 Verifying wallet ownership...`);
+    
+    // Check timestamp is recent (within 5 minutes)
+    if (!isSignatureTimestampValid(timestamp)) {
+      return res.status(400).json({
+        error: 'Signature expired',
+        details: 'Please sign a new message. Signatures are valid for 5 minutes.'
+      });
+    }
+
+    // Verify signature
+    const isOwner = await verifyWalletOwnership({
+      walletAddress: wallet_address,
+      signature,
+      message
+    });
+
+    if (!isOwner) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        details: 'Invalid signature. You must prove ownership of the wallet address.'
+      });
+    }
+
+    console.log(`✅ Wallet ownership verified`);
+
+    // 2. Verify wallet address is in the message
+    if (!message.includes(wallet_address)) {
+      return res.status(400).json({
+        error: 'Invalid message',
+        details: 'Message must contain the wallet address'
+      });
+    }
+
     // Default reveal preferences
     const prefs: RevealPreferences = {
       show_total_value: reveal_preferences.show_total_value ?? true,
@@ -64,7 +117,7 @@ router.post('/generate', async (req: Request, res: Response) => {
       show_snapshot_time: reveal_preferences.show_snapshot_time ?? true
     };
 
-    // 1. Verify commitment exists on-chain
+    // 3. Verify commitment exists on-chain AND owner matches
     console.log(`🔍 Verifying on-chain commitment...`);
     const solanaClient = getSolanaClient();
     const commitmentPubkey = new PublicKey(commitment_address);
@@ -72,7 +125,7 @@ router.post('/generate', async (req: Request, res: Response) => {
 
     const verification = await solanaClient.verifyCommitment(
       commitmentPubkey,
-      ownerPubkey
+      ownerPubkey // This ensures the on-chain commitment owner matches
     );
 
     if (!verification.valid) {
@@ -84,6 +137,14 @@ router.post('/generate', async (req: Request, res: Response) => {
 
     const onChainCommitment = verification.commitment!;
 
+    // Double-check owner matches (critical security check)
+    if (onChainCommitment.owner !== wallet_address) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        details: 'You do not own this commitment on-chain'
+      });
+    }
+
     // Check version matches
     if (onChainCommitment.version !== commitment_version) {
       return res.status(400).json({
@@ -94,9 +155,9 @@ router.post('/generate', async (req: Request, res: Response) => {
 
     console.log(`✅ On-chain commitment verified (version ${onChainCommitment.version})`);
 
-    // 2. Fetch portfolio from Zerion
+    // 4. Fetch portfolio from Zerion
     console.log(`📊 Fetching portfolio from Zerion...`);
-    const zerionClient = getZerionClientOrMock();
+    const zerionClient = await getZerionClientOrMock();
     const portfolio = await zerionClient.getPortfolio(wallet_address, chain);
 
     if (!portfolio || portfolio.assets.length === 0) {
@@ -107,15 +168,15 @@ router.post('/generate', async (req: Request, res: Response) => {
 
     console.log(`✅ Portfolio fetched: ${portfolio.assets.length} assets, $${portfolio.total_value}`);
 
-    // 3. Build Merkle leaves from portfolio
+    // 5. Build Merkle leaves from portfolio
     const allLeaves = buildPortfolioLeaves(portfolio, wallet_address);
     console.log(`🌳 Built ${allLeaves.length} Merkle leaves`);
 
-    // 4. Select leaves to reveal
+    // 6. Select leaves to reveal
     const { revealed, hidden } = selectLeavesToReveal(allLeaves, prefs);
     console.log(`👁️  Revealing ${revealed.length} leaves, hiding ${hidden.length}`);
 
-    // 5. Create Sparse Merkle Tree
+    // 7. Create Sparse Merkle Tree
     const smtLeaves = allLeaves.map(leaf => ({
       key: leaf.key,
       value: leaf.value
@@ -124,7 +185,7 @@ router.post('/generate', async (req: Request, res: Response) => {
     const merkleRoot = smt.getRoot();
     console.log(`🔐 Merkle root: ${merkleRoot.slice(0, 16)}...`);
 
-    // 6. Verify root matches on-chain commitment
+    // 8. Verify root matches on-chain commitment
     const onChainRoot = Buffer.from(onChainCommitment.merkleRoot).toString('hex');
     if (merkleRoot !== onChainRoot) {
       return res.status(400).json({
@@ -135,13 +196,13 @@ router.post('/generate', async (req: Request, res: Response) => {
 
     console.log(`✅ Merkle root matches on-chain commitment`);
 
-    // 7. Generate proofs for revealed leaves
+    // 9. Generate proofs for revealed leaves
     const proofData = revealed.map(leaf => ({
       leaf,
       ...smt.getProof(leaf.key)
     }));
 
-    // 8. Create share token in database
+    // 10. Create share token in database
     const shareToken = await createShareToken({
       walletAddress: wallet_address,
       commitmentAddress: commitment_address,
@@ -185,6 +246,7 @@ router.post('/generate', async (req: Request, res: Response) => {
 /**
  * GET /api/share/resolve?token=xxx
  * Resolve a share token to public data (no auth required)
+ * This is PUBLIC - anyone can view
  */
 router.get('/resolve', async (req: Request, res: Response) => {
   try {
@@ -276,11 +338,11 @@ router.post('/verify', async (req: Request, res: Response) => {
 /**
  * POST /api/share/revoke
  * Revoke a share token (off-chain only)
- * Requires wallet signature verification
+ * REQUIRES: Wallet signature to prove ownership
  */
 router.post('/revoke', async (req: Request, res: Response) => {
   try {
-    const { token_id, wallet_address } = req.body;
+    const { token_id, wallet_address, signature, message, timestamp } = req.body;
 
     if (!token_id) {
       return res.status(400).json({ error: 'token_id is required' });
@@ -288,6 +350,27 @@ router.post('/revoke', async (req: Request, res: Response) => {
 
     if (!wallet_address) {
       return res.status(400).json({ error: 'wallet_address is required' });
+    }
+
+    if (!signature) {
+      return res.status(400).json({ 
+        error: 'signature is required - please sign the revocation message with your wallet' 
+      });
+    }
+
+    // Verify wallet ownership
+    if (!isSignatureTimestampValid(timestamp)) {
+      return res.status(400).json({ error: 'Signature expired' });
+    }
+
+    const isOwner = await verifyWalletOwnership({
+      walletAddress: wallet_address,
+      signature,
+      message
+    });
+
+    if (!isOwner) {
+      return res.status(401).json({ error: 'Unauthorized - invalid signature' });
     }
 
     const success = await revokeShareToken(token_id, wallet_address);
@@ -313,15 +396,37 @@ router.post('/revoke', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/share/my-tokens?wallet=xxx
+ * GET /api/share/my-tokens?wallet=xxx&signature=xxx&message=xxx&timestamp=xxx
  * Get all share tokens for a wallet
+ * REQUIRES: Wallet signature to prove ownership
  */
 router.get('/my-tokens', async (req: Request, res: Response) => {
   try {
-    const { wallet } = req.query;
+    const { wallet, signature, message, timestamp } = req.query;
 
     if (!wallet || typeof wallet !== 'string') {
       return res.status(400).json({ error: 'wallet parameter is required' });
+    }
+
+    if (!signature || typeof signature !== 'string') {
+      return res.status(400).json({ 
+        error: 'signature is required - please sign the message with your wallet' 
+      });
+    }
+
+    // Verify wallet ownership
+    if (!isSignatureTimestampValid(Number(timestamp))) {
+      return res.status(400).json({ error: 'Signature expired' });
+    }
+
+    const isOwner = await verifyWalletOwnership({
+      walletAddress: wallet,
+      signature,
+      message: message as string
+    });
+
+    if (!isOwner) {
+      return res.status(401).json({ error: 'Unauthorized - invalid signature' });
     }
 
     const tokens = await getWalletShareTokens(wallet);
@@ -353,43 +458,16 @@ router.get('/my-tokens', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/share/commitment/:address
- * Get on-chain commitment details
+ * REMOVED: GET /api/share/commitment/:address
+ * 
+ * This endpoint was REMOVED for privacy reasons:
+ * - It exposed wallet addresses publicly
+ * - Anyone could query any commitment by guessing addresses
+ * - Defeats the purpose of privacy-first design
+ * 
+ * Commitment data is now ONLY accessible through:
+ * 1. Share tokens (controlled by owner)
+ * 2. On-chain queries (but only if you know the commitment PDA)
  */
-router.get('/commitment/:address', async (req: Request, res: Response) => {
-  try {
-    const { address } = req.params;
-
-    if (!address) {
-      return res.status(400).json({ error: 'address parameter is required' });
-    }
-
-    const solanaClient = getSolanaClient();
-    const commitmentPubkey = new PublicKey(address);
-    
-    const commitment = await solanaClient.getCommitment(commitmentPubkey);
-
-    if (!commitment) {
-      return res.status(404).json({ error: 'Commitment not found on-chain' });
-    }
-
-    res.json({
-      address: commitment.address,
-      owner: commitment.owner,
-      merkle_root: Buffer.from(commitment.merkleRoot).toString('hex'),
-      version: commitment.version,
-      timestamp: commitment.timestamp,
-      revoked: commitment.revoked,
-      committed_at: new Date(commitment.timestamp * 1000).toISOString()
-    });
-
-  } catch (error: any) {
-    console.error('Error fetching commitment:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch commitment',
-      details: error.message 
-    });
-  }
-});
 
 export default router;

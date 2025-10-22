@@ -1,14 +1,53 @@
 #![allow(unexpected_cfgs)]
 use anchor_lang::prelude::*;
 
-declare_id!("DHRt9FMkbU6pvuMLZo4voWwiFJmYeD1rvrhK7GFizqwp");
+declare_id!("DWgsCM9XpssjBTPAP7g2aq9MFbnmPZCftWrgg7Pg49MV");
 
 #[program]
 pub mod flexanon {
     use super::*;
 
-    
+    /// Commit or update merkle root (Direct - user signs)
+    /// Increments version if root changes
     pub fn commit_root(
+        ctx: Context<CommitRoot>,
+        merkle_root: [u8; 32],
+        metadata: CommitMetadata,
+    ) -> Result<()> {
+        let commitment = &mut ctx.accounts.commitment;
+        
+        // Initialize if new
+        if commitment.owner == Pubkey::default() {
+            commitment.owner = ctx.accounts.owner.key();
+            commitment.bump = ctx.bumps.commitment;
+            commitment.version = 1;
+        } else {
+            // Increment version if root changed
+            if commitment.merkle_root != merkle_root {
+                commitment.version += 1;
+            }
+        }
+        
+        commitment.merkle_root = merkle_root;
+        commitment.metadata = metadata;
+        commitment.timestamp = Clock::get()?.unix_timestamp;
+        commitment.revoked = false; // Reset on update
+
+        emit!(RootCommitted {
+            owner: commitment.owner,
+            commitment_address: commitment.key(),
+            merkle_root,
+            version: commitment.version,
+            timestamp: commitment.timestamp,
+        });
+
+        Ok(())
+    }
+
+    /// 🆕 NEW: Commit via relayer (privacy-preserving)
+    /// Relayer pays and signs, but commitment belongs to user
+    /// User's wallet never appears on blockchain!
+    pub fn commit_root_via_relayer(
         ctx: Context<CommitRootViaRelayer>,
         user_wallet: Pubkey,
         merkle_root: [u8; 32],
@@ -85,7 +124,7 @@ pub struct CommitRoot<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
+/// 🆕 NEW: Account struct for relayer commits
 #[derive(Accounts)]
 #[instruction(user_wallet: Pubkey)]
 pub struct CommitRootViaRelayer<'info> {

@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "flexanon",
   "version": "1.0.0",
   "description": "Privacy-first portfolio sharing with Merkle proofs on Solana",
@@ -9,29 +10,43 @@
     "start": "node dist/server.js",
     "db:setup": "tsx scripts/setup-db.ts",
     "test:merkle": "tsx tests/test-merkle.ts",
-    "test": "npm run test:merkle"
+    "test:integration": "mocha --require tsx/cjs --timeout 60000 tests/integration.test.ts",
+    "test:e2e": "mocha --require tsx/cjs --timeout 60000 tests/e2e-zerion.test.ts",
+    "test": "npm run test:merkle && npm run test:integration && npm run test:e2e"
   },
-  "keywords": ["solana", "zerion", "portfolio", "privacy", "merkle"],
+  "keywords": [
+    "solana",
+    "zerion",
+    "portfolio",
+    "privacy",
+    "merkle"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
+    "@coral-xyz/anchor": "^0.31.1",
+    "@project-serum/anchor": "^0.26.0",
+    "@solana/web3.js": "^1.87.6",
+    "axios": "^1.6.2",
+    "bn.js": "^5.2.2",
+    "bs58": "^5.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
+    "express": "^4.18.2",
     "pg": "^8.11.3",
-    "axios": "^1.6.2",
-    "bs58": "^5.0.0",
-    "tweetnacl": "^1.0.3",
-    "@solana/web3.js": "^1.87.6",
-    "@coral-xyz/anchor": "^0.29.0",
-    "@project-serum/anchor": "^0.26.0"
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.11",
+    "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jest": "^30.0.0",
+    "@types/mocha": "^10.0.6",
     "@types/node": "^20.10.5",
     "@types/pg": "^8.10.9",
-    "@types/cors": "^2.8.17",
-    "typescript": "^5.3.3",
-    "tsx": "^4.7.0"
+    "chai": "^4.3.10",
+    "mocha": "^10.2.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
   }
 }

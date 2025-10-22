@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { ZerionPortfolio, ZerionAsset } from '../types';
 
 /**
- * Zerion API Client
+ * Zerion API Client (Updated for v1 API)
  * Docs: https://developers.zerion.io/reference/intro-getting-started
  */
 
@@ -12,11 +12,15 @@ export class ZerionClient {
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
+    
+    // Zerion uses Basic Auth with API key as username (password is empty)
+    const authHeader = `Basic ${Buffer.from(this.apiKey + ':').toString('base64')}`;
+    
     this.client = axios.create({
-      baseURL: process.env.ZERION_API_URL || 'https://api.zerion.io',
+      baseURL: 'https://api.zerion.io/v1',
       headers: {
-        'Authorization': `Basic ${Buffer.from(this.apiKey + ':').toString('base64')}`,
-        'Content-Type': 'application/json'
+        'Authorization': authHeader,
+        'Accept': 'application/json'
       },
       timeout: 30000
     });
@@ -24,20 +28,39 @@ export class ZerionClient {
 
   /**
    * Fetch wallet portfolio
-   * https://developers.zerion.io/reference/walletspositions
    */
   async getPortfolio(walletAddress: string, chain: string = 'solana'): Promise<ZerionPortfolio> {
     try {
-      // Normalize chain name for Zerion API
-      const chainId = this.normalizeChain(chain);
+      console.log(`📊 Fetching Zerion portfolio for ${walletAddress}...`);
 
-      // Fetch positions (assets held)
-      const positionsResponse = await this.client.get(
-        `/v1/wallets/${walletAddress}/positions/`,
+      // 1. Fetch portfolio summary
+      const portfolioResponse = await this.client.get(
+        `/wallets/${walletAddress}/portfolio`,
         {
           params: {
-            'filter[chain_ids]': chainId,
             'currency': 'usd',
+            'filter[positions]': 'only_simple'
+          }
+        }
+      );
+
+      const portfolioData = portfolioResponse.data.data.attributes;
+      const totalValue = portfolioData.total?.positions || 0;
+      const changes = portfolioData.changes || {};
+      
+      // Calculate PnL percentage
+      const absolute1d = changes.absolute_1d || 0;
+      const pnlPercentage = changes.percent_1d || 0;
+
+      // 2. Fetch positions (assets)
+      const positionsResponse = await this.client.get(
+        `/wallets/${walletAddress}/positions/`,
+        {
+          params: {
+            'currency': 'usd',
+            'filter[positions]': 'only_simple',
+            'filter[trash]': 'only_non_trash',
+            'filter[chain_ids]': chain,
             'sort': 'value'
           }
         }
@@ -45,104 +68,77 @@ export class ZerionClient {
 
       const positions = positionsResponse.data.data || [];
 
-      // Fetch portfolio stats
-      const portfolioResponse = await this.client.get(
-        `/v1/wallets/${walletAddress}/portfolio/`,
-        {
-          params: {
-            'currency': 'usd',
-            'filter[chain_ids]': chainId
-          }
-        }
-      );
-
-      const portfolioData = portfolioResponse.data.data?.attributes || {};
-
       // Parse assets
       const assets: ZerionAsset[] = positions.map((position: any) => {
         const attributes = position.attributes || {};
-        const fungible = attributes.fungible_info || {};
-        const quantity = attributes.quantity?.numeric || '0';
+        const fungibleInfo = attributes.fungible_info || {};
+        const quantity = attributes.quantity || {};
         const value = attributes.value || 0;
         const price = attributes.price || 0;
 
+        // Find the implementation for the current chain
+        const implementations = fungibleInfo.implementations || [];
+        const chainImpl = implementations.find((impl: any) => impl.chain_id === chain);
+
         return {
-          asset_code: fungible.implementations?.[0]?.address || 'unknown',
-          symbol: fungible.symbol || 'UNKNOWN',
-          name: fungible.name || 'Unknown Asset',
-          quantity,
-          price,
-          value,
-          icon_url: fungible.icon?.url
+          asset_code: chainImpl?.address || 'unknown',
+          symbol: fungibleInfo.symbol || 'UNKNOWN',
+          name: fungibleInfo.name || 'Unknown Asset',
+          quantity: quantity.numeric || '0',
+          price: price,
+          value: value,
+          icon_url: fungibleInfo.icon?.url
         };
       });
 
-      // Calculate total value and PnL
-      const totalValue = portfolioData.total?.value || 0;
-      const totalCost = portfolioData.total_cost || totalValue;
-      const pnlPercentage = totalCost > 0 
-        ? ((totalValue - totalCost) / totalCost) * 100 
-        : 0;
+      console.log(`✅ Zerion: Found ${assets.length} assets, total value: $${totalValue.toFixed(2)}`);
 
       return {
         wallet_address: walletAddress,
         chain: chain,
         total_value: totalValue,
         pnl_percentage: pnlPercentage,
-        assets: assets.sort((a, b) => b.value - a.value), // Sort by value descending
+        assets: assets,
         snapshot_timestamp: Date.now()
       };
 
     } catch (error: any) {
       console.error('Zerion API error:', error.response?.data || error.message);
+      
+      if (error.response?.status === 401) {
+        throw new Error('Invalid Zerion API key. Please check your ZERION_API_KEY in .env');
+      }
+      
+      if (error.response?.status === 404) {
+        throw new Error(`Wallet not found or no positions on ${chain}`);
+      }
+      
       throw new Error(`Failed to fetch portfolio: ${error.message}`);
     }
   }
 
   /**
-   * Get transaction history (optional, for future features)
+   * Get chart data (optional, for future features)
    */
-  async getTransactions(walletAddress: string, chain: string = 'solana', limit: number = 50) {
+  async getChartData(
+    walletAddress: string, 
+    period: 'day' | 'week' | 'month' | 'year' = 'day'
+  ) {
     try {
-      const chainId = this.normalizeChain(chain);
-
       const response = await this.client.get(
-        `/v1/wallets/${walletAddress}/transactions/`,
+        `/wallets/${walletAddress}/charts/${period}`,
         {
           params: {
-            'filter[chain_ids]': chainId,
-            'page[size]': limit
+            'currency': 'usd'
           }
         }
       );
 
-      return response.data.data || [];
+      return response.data.data;
     } catch (error: any) {
-      console.error('Zerion API error:', error.response?.data || error.message);
-      throw new Error(`Failed to fetch transactions: ${error.message}`);
+      console.error('Zerion chart error:', error.response?.data || error.message);
+      return null;
     }
-  }
-
-  /**
-   * Normalize chain names to Zerion chain IDs
-   * https://developers.zerion.io/reference/supported-chains
-   */
-  private normalizeChain(chain: string): string {
-    const chainMap: Record<string, string> = {
-      'solana': 'solana',
-      'ethereum': 'ethereum',
-      'eth': 'ethereum',
-      'polygon': 'polygon',
-      'matic': 'polygon',
-      'base': 'base',
-      'arbitrum': 'arbitrum',
-      'optimism': 'optimism',
-      'avalanche': 'avalanche',
-      'bsc': 'binance-smart-chain',
-      'binance': 'binance-smart-chain'
-    };
-
-    return chainMap[chain.toLowerCase()] || chain.toLowerCase();
   }
 
   /**
@@ -150,8 +146,10 @@ export class ZerionClient {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      // Make a simple request to verify credentials
-      await this.client.get('/v1/chains');
+      // Try to fetch a known wallet to verify credentials
+      await this.client.get('/wallets/CDSjb7bgX388TMZ7T2LPgEz6J6vbA9B5ugF8qLnRgk8N/portfolio', {
+        params: { 'currency': 'usd' }
+      });
       return true;
     } catch (error) {
       console.error('Zerion health check failed:', error);
@@ -168,7 +166,7 @@ let zerionClient: ZerionClient | null = null;
 export function getZerionClient(): ZerionClient {
   if (!zerionClient) {
     const apiKey = process.env.ZERION_API_KEY;
-    if (!apiKey) {
+    if (!apiKey || apiKey === 'your_zerion_api_key_here') {
       throw new Error('ZERION_API_KEY not set in environment variables');
     }
     zerionClient = new ZerionClient(apiKey);

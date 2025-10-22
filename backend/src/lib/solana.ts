@@ -49,8 +49,7 @@ export class SolanaClient {
         return null;
       }
 
-      // Parse the account data
-      // This is a simplified parser - adjust based on your actual program structure
+      // Parse the account data according to ShareCommitment struct layout
       const data = accountInfo.data;
 
       // Skip 8-byte discriminator
@@ -68,16 +67,40 @@ export class SolanaClient {
       const version = data.readUInt32LE(offset);
       offset += 4;
 
-      // Skip metadata parsing for now (complex struct)
-      // You'll need to adjust this based on your actual struct layout
+      // Parse metadata (CommitMetadata struct)
+      // - chain: String (4 bytes length prefix + string data)
+      const chainLen = data.readUInt32LE(offset);
+      offset += 4;
+      const chain = data.slice(offset, offset + chainLen).toString('utf-8');
+      offset += chainLen;
+      
+      // - snapshot_timestamp: i64 (8 bytes)
+      const snapshotTimestamp = Number(data.readBigInt64LE(offset));
+      offset += 8;
+      
+      // - expires_at: Option<i64> (1 byte discriminator + optional 8 bytes)
+      const hasExpiresAt = data[offset] === 1;
+      offset += 1;
+      let expiresAt = null;
+      if (hasExpiresAt) {
+        expiresAt = Number(data.readBigInt64LE(offset));
+        offset += 8;
+      }
+      
+      // - privacy_score: u8 (1 byte)
+      const privacyScore = data[offset];
+      offset += 1;
 
       // Parse timestamp (8 bytes, i64)
-      const timestampOffset = offset + 100; // Adjust based on metadata size
-      const timestamp = Number(data.readBigInt64LE(timestampOffset));
+      const timestamp = Number(data.readBigInt64LE(offset));
+      offset += 8;
 
       // Parse revoked (1 byte, bool)
-      const revokedOffset = timestampOffset + 8;
-      const revoked = data[revokedOffset] === 1;
+      const revoked = data[offset] === 1;
+      offset += 1;
+
+      // Parse bump (1 byte, u8) - not used but present
+      const bump = data[offset];
 
       return {
         owner: owner.toString(),

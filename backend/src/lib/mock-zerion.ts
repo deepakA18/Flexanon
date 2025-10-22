@@ -78,7 +78,7 @@ export class MockZerionClient {
 /**
  * Get appropriate client based on environment
  */
-export function getZerionClientOrMock() {
+export async function getZerionClientOrMock() {
   const apiKey = process.env.ZERION_API_KEY;
   
   if (!apiKey || apiKey === 'your_zerion_api_key_here') {
@@ -87,7 +87,7 @@ export function getZerionClientOrMock() {
   }
 
   // Return real client when API key is available
-  const { getZerionClient } = require('./zerion');
+  const { getZerionClient } = await import('./zerion.js');
   return getZerionClient();
 }
 

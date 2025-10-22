@@ -64,8 +64,7 @@ export interface ShareToken {
 
 export interface PublicShareData {
   token_id: string;
-  commitment_address: string;
-  commitment_version: number;
+  // commitment_address removed for privacy - no one should be able to derive wallet address
   committed_at: string;
   revealed_data: {
     total_value?: string;
@@ -80,13 +79,14 @@ export interface PublicShareData {
   proof_data: MerkleProof[];
   verification_status: 'valid' | 'invalid' | 'unknown';
   on_chain_status: {
-    exists: boolean;
+    verified: boolean;      // Just show if verified on-chain
     revoked: boolean;
     version: number;
-    merkle_root?: string;
+    // merkle_root removed - not needed for public view
   };
   privacy: {
     wallet_address: 'hidden' | 'revealed';
+    actual_wallet?: string;  // Only if user chose to reveal
     total_assets_count: number;
     revealed_count: number;
   };
