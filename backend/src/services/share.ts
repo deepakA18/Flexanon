@@ -172,17 +172,14 @@ export async function resolveShareToken(tokenId: string): Promise<PublicShareDat
 
   return {
     token_id: token.token_id,
-    commitment_address: token.commitment_address,
-    commitment_version: token.commitment_version,
     committed_at: new Date(commitment.timestamp * 1000).toISOString(),
     revealed_data: revealedData,
     proof_data: token.proof_data,
     verification_status: 'valid',
     on_chain_status: {
-      exists: true,
+      verified: true,
       revoked: commitment.revoked,
       version: commitment.version,
-      merkle_root: Buffer.from(commitment.merkleRoot).toString('hex'),
     },
     privacy: {
       wallet_address: walletRevealed ? 'revealed' : 'hidden',
