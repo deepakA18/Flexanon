@@ -162,7 +162,9 @@ router.post('/generate', async (req: Request, res: Response) => {
 
     if (!portfolio || portfolio.assets.length === 0) {
       return res.status(400).json({ 
-        error: 'No portfolio data found for this wallet' 
+        error: 'No portfolio found',
+        details: 'This wallet has no assets on mainnet. FlexAnon requires mainnet assets to generate a share link.',
+        user_friendly_message: 'Oops! Looks like your wallet doesn\'t have any mainnet balance!'
       });
     }
 

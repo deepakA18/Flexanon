@@ -6,6 +6,7 @@ import { getSolanaClient } from './lib/solana';
 import shareRoutes from './routes/share';
 import devRoutes from './routes/dev';
 import relayerRoutes from './routes/relayer';
+import subscriptionRoutes from './routes/subscription';
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ app.get('/health', async (req: Request, res: Response) => {
 
 app.use('/api/share', shareRoutes);
 app.use('/api/relayer', relayerRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 if (process.env.NODE_ENV === 'development') {
   app.use('/api/dev', devRoutes);

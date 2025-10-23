@@ -9,6 +9,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "db:setup": "tsx scripts/setup-db.ts",
+    "db:reset": "tsx scripts/reset-db.ts",
     "test:merkle": "tsx tests/test-merkle.ts",
     "test:integration": "mocha --require tsx/cjs --timeout 60000 tests/integration.test.ts",
     "test:e2e": "mocha --require tsx/cjs --timeout 60000 tests/e2e-zerion.test.ts",
