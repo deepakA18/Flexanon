@@ -30,6 +30,24 @@ app.use((req: Request, res: Response, next) => {
   next();
 });
 
+app.get('/', (req: Request, res: Response) => {
+  res.json({
+    name: 'FlexAnon Backend API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/health',
+      api: {
+        share: '/api/share',
+        relayer: '/api/relayer',
+        subscription: '/api/subscription'
+      }
+    },
+    documentation: 'https://github.com/yourusername/flexanon',
+    message: 'Welcome to FlexAnon - Privacy-first portfolio sharing on Solana'
+  });
+});
+
 app.get('/health', async (req: Request, res: Response) => {
   try {
     const solanaClient = getSolanaClient();
