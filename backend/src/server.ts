@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3001;
 // CORS configuration - MUST be before routes
 const corsOptions = {
   origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
-    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+    const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:3001',
       'https://flexanon-delta.vercel.app',
