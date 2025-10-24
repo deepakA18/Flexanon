@@ -6,8 +6,8 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { getRelayerService, RelayCommitRequest } from '../services/relayer';
-import { verifyWalletOwnership, isSignatureTimestampValid } from '../lib/ownership';
+import { getRelayerService, RelayCommitRequest } from '../services/relayer.js';
+import { verifyWalletOwnership, isSignatureTimestampValid } from '../lib/ownership.js';
 import { PublicKey } from '@solana/web3.js';
 
 const router = Router();

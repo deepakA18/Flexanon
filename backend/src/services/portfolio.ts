@@ -1,5 +1,5 @@
-import { ZerionPortfolio, MerkleLeaf, RevealPreferences } from '../types';
-import { createLeafKey, createLeafValue } from '../lib/merkle';
+import { ZerionPortfolio, MerkleLeaf, RevealPreferences } from '../types/index.js';
+import { createLeafKey, createLeafValue } from '../lib/merkle.js';
 
 /**
  * Portfolio service - converts Zerion portfolio into Merkle leaves

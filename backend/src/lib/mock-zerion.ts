@@ -1,4 +1,4 @@
-import { ZerionPortfolio, ZerionAsset } from '../types';
+import { ZerionPortfolio, ZerionAsset } from '../types/index.js';
 
 /**
  * Mock Zerion client for testing without API key

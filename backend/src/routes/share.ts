@@ -1,22 +1,22 @@
 import { Router, Request, Response } from 'express';
-import { getZerionClientOrMock } from '../lib/mock-zerion';
-import { getSolanaClient } from '../lib/solana';
-import { verifyWalletOwnership, isSignatureTimestampValid } from '../lib/ownership';
-import SparseMerkleTree from '../lib/merkle';
+import { getZerionClientOrMock } from '../lib/mock-zerion.js';
+import { getSolanaClient } from '../lib/solana.js';
+import { verifyWalletOwnership, isSignatureTimestampValid } from '../lib/ownership.js';
+import SparseMerkleTree from '../lib/merkle.js';
 import { PublicKey } from '@solana/web3.js';
 import { 
   buildPortfolioLeaves, 
   selectLeavesToReveal,
   calculatePrivacyScore 
-} from '../services/portfolio';
+} from '../services/portfolio.js';
 import {
   createShareToken,
   resolveShareToken,
   revokeShareToken,
   getWalletShareTokens,
   trackShareView
-} from '../services/share';
-import { GenerateShareRequest, RevealPreferences } from '../types';
+} from '../services/share.js';
+import { GenerateShareRequest, RevealPreferences } from '../types/index.js';
 
 const router = Router();
 

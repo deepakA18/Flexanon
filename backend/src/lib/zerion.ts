@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { ZerionPortfolio, ZerionAsset } from '../types';
+import { ZerionPortfolio, ZerionAsset } from '../types/index.js';
 
 /**
  * Zerion API Client (Updated for v1 API)

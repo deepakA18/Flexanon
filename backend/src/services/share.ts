@@ -1,8 +1,8 @@
-import { query } from '../config/database';
-import { ShareToken, MerkleLeaf, MerkleProof, PublicShareData } from '../types';
-import { generateShortToken } from '../lib/crypto';
-import { formatPublicPortfolioData } from './portfolio';
-import { getSolanaClient } from '../lib/solana';
+import { query } from '../config/database.js';
+import { ShareToken, MerkleLeaf, MerkleProof, PublicShareData } from '../types/index.js';
+import { generateShortToken } from '../lib/crypto.js';
+import { formatPublicPortfolioData } from './portfolio.js';
+import { getSolanaClient } from '../lib/solana.js';
 import { PublicKey } from '@solana/web3.js';
 
 /**

@@ -1,12 +1,12 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { initDatabase } from './config/database';
-import { getSolanaClient } from './lib/solana';
-import shareRoutes from './routes/share';
-import devRoutes from './routes/dev';
-import relayerRoutes from './routes/relayer';
-import subscriptionRoutes from './routes/subscription';
+import { initDatabase } from './config/database.js';
+import { getSolanaClient } from './lib/solana.js';
+import shareRoutes from './routes/share.js';
+import devRoutes from './routes/dev.js';
+import relayerRoutes from './routes/relayer.js';
+import subscriptionRoutes from './routes/subscription.js';
 
 dotenv.config();
 
@@ -70,7 +70,12 @@ app.use((err: any, req: Request, res: Response, next: any) => {
   });
 });
 
-async function startServer() {
+// Initialize database and connections
+let initialized = false;
+
+async function initialize() {
+  if (initialized) return;
+  
   try {
     console.log('[INIT] Initializing database...');
     await initDatabase();
@@ -83,34 +88,59 @@ async function startServer() {
       console.log(`[SOLANA] Connected to ${networkInfo.network} (slot: ${networkInfo.slot})`);
     }
 
-    app.listen(PORT, () => {
-      console.log('');
-      console.log('FlexAnon Backend Server');
-      console.log('======================');
-      console.log(`Server: http://localhost:${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`Solana Network: ${process.env.SOLANA_NETWORK || 'localnet'}`);
-      console.log(`Program ID: ${process.env.SOLANA_PROGRAM_ID || 'Not Set'}`);
-      console.log('======================');
-      console.log('');
-    });
-
+    initialized = true;
+    console.log('[INIT] Backend initialized successfully');
   } catch (error) {
-    console.error('[ERROR] Failed to start server:', error);
-    process.exit(1);
+    console.error('[ERROR] Failed to initialize:', error);
+    throw error;
   }
 }
 
-process.on('SIGTERM', () => {
-  console.log('[SHUTDOWN] SIGTERM received, shutting down gracefully...');
-  process.exit(0);
-});
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  async function startServer() {
+    try {
+      await initialize();
 
-process.on('SIGINT', () => {
-  console.log('[SHUTDOWN] SIGINT received, shutting down gracefully...');
-  process.exit(0);
-});
+      app.listen(PORT, () => {
+        console.log('');
+        console.log('FlexAnon Backend Server');
+        console.log('======================');
+        console.log(`Server: http://localhost:${PORT}`);
+        console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`Solana Network: ${process.env.SOLANA_NETWORK || 'localnet'}`);
+        console.log(`Program ID: ${process.env.SOLANA_PROGRAM_ID || 'Not Set'}`);
+        console.log('======================');
+        console.log('');
+      });
 
-startServer();
+    } catch (error) {
+      console.error('[ERROR] Failed to start server:', error);
+      process.exit(1);
+    }
+  }
 
-export default app;
+  process.on('SIGTERM', () => {
+    console.log('[SHUTDOWN] SIGTERM received, shutting down gracefully...');
+    process.exit(0);
+  });
+
+  process.on('SIGINT', () => {
+    console.log('[SHUTDOWN] SIGINT received, shutting down gracefully...');
+    process.exit(0);
+  });
+
+  startServer();
+}
+
+// For Vercel serverless
+export { initialize };
+
+// Vercel serverless handler
+export default async function handler(req: any, res: any) {
+  await initialize();
+  return app(req, res);
+}
+
+// Also export app for testing
+export { app };

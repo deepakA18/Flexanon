@@ -5,7 +5,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { getZerionClientOrMock } from '../lib/mock-zerion';
+import { getZerionClientOrMock } from '../lib/mock-zerion.js';
 import { PublicKey } from '@solana/web3.js';
 
 const router = Router();
