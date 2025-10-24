@@ -13,14 +13,35 @@ dotenv.config();
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
-  credentials: true
-}));
+// CORS configuration - MUST be before routes
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://flexanon-delta.vercel.app',
+      'https://flexanon.vercel.app'
+    ];
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400 // 24 hours
+};
 
+app.use(cors(corsOptions));
+
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Request logging middleware
 app.use((req: Request, res: Response, next) => {
   const start = Date.now();
   res.on('finish', () => {
@@ -30,17 +51,20 @@ app.use((req: Request, res: Response, next) => {
   next();
 });
 
+// Root endpoint
 app.get('/', (req: Request, res: Response) => {
   res.json({
     name: 'FlexAnon Backend API',
     version: '1.0.0',
     status: 'running',
+    environment: process.env.NODE_ENV,
     endpoints: {
       health: '/health',
       api: {
         share: '/api/share',
         relayer: '/api/relayer',
-        subscription: '/api/subscription'
+        subscription: '/api/subscription',
+        dev: process.env.NODE_ENV === 'development' ? '/api/dev' : 'disabled'
       }
     },
     documentation: 'https://github.com/yourusername/flexanon',
@@ -48,6 +72,7 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
+// Health check
 app.get('/health', async (req: Request, res: Response) => {
   try {
     const solanaClient = getSolanaClient();
@@ -57,34 +82,53 @@ app.get('/health', async (req: Request, res: Response) => {
       status: 'ok', 
       timestamp: new Date().toISOString(),
       version: '1.0.0',
+      environment: process.env.NODE_ENV,
+      devRoutesEnabled: process.env.NODE_ENV === 'development',
       solana: networkInfo
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({
       status: 'error',
-      message: 'Solana connection failed'
+      message: 'Solana connection failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
 
+// Register API routes - BEFORE error handlers
 app.use('/api/share', shareRoutes);
 app.use('/api/relayer', relayerRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 
+// Dev routes - ONLY if development
+if (process.env.NODE_ENV === 'development') {
+  app.use('/api/dev', devRoutes);
+  console.log('[DEV] Development routes enabled at /api/dev');
+}
 
-app.use('/api/dev', devRoutes);
-console.log('[DEV] Development routes enabled');
-
-
+// 404 handler - AFTER all routes
 app.use((req: Request, res: Response) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({ 
+    error: 'Route not found',
+    path: req.path,
+    method: req.method,
+    availableEndpoints: {
+      health: 'GET /health',
+      share: 'POST /api/share/generate',
+      relayer: 'POST /api/relayer/commit',
+      subscription: 'GET /api/subscription/status',
+      dev: process.env.NODE_ENV === 'development' ? 'POST /api/dev/test-zerion' : 'disabled'
+    }
+  });
 });
 
+// Error handler - LAST middleware
 app.use((err: any, req: Request, res: Response, next: any) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ 
     error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 
@@ -105,6 +149,9 @@ async function initialize() {
     if (networkInfo) {
       console.log(`[SOLANA] Connected to ${networkInfo.network} (slot: ${networkInfo.slot})`);
     }
+
+    console.log(`[INIT] NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`[INIT] Dev routes enabled: ${process.env.NODE_ENV === 'development'}`);
 
     initialized = true;
     console.log('[INIT] Backend initialized successfully');
@@ -128,6 +175,7 @@ if (process.env.NODE_ENV !== 'production') {
         console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
         console.log(`Solana Network: ${process.env.SOLANA_NETWORK || 'localnet'}`);
         console.log(`Program ID: ${process.env.SOLANA_PROGRAM_ID || 'Not Set'}`);
+        console.log(`Dev Routes: ${process.env.NODE_ENV === 'development' ? 'ENABLED (/api/dev)' : 'DISABLED'}`);
         console.log('======================');
         console.log('');
       });
@@ -154,7 +202,7 @@ if (process.env.NODE_ENV !== 'production') {
 // For Vercel serverless
 export { initialize };
 
-// Vercel serverless handler
+// Vercel serverless handler - MUST initialize before handling requests
 export default async function handler(req: any, res: any) {
   await initialize();
   return app(req, res);
