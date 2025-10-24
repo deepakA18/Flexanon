@@ -1,8 +1,5 @@
-import ConnectWalletButton from "@/components/connect-wallet-button";
-import Hero from "@/components/sections/hero-section";
-import InfiniteHero from "@/components/visuals/infinite-hero";
-import Image from "next/image";
 
+import Hero from "@/components/sections/hero-section";
 export default function Home() {
   return (
     <div className="h-screen">

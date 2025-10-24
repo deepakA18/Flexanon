@@ -50,15 +50,21 @@ export default function Hero() {
       <motion.div
         className="absolute w-[1000px] h-[1700px] pointer-events-none"
         style={{
-          background: "linear-gradient(to right, #14F195, #0ABAB5, #7B3FE4, #9945FF)",
-          filter: "blur(20px)",
+          background:
+            " linear-gradient(90deg,rgba(119, 236, 157, 1) 44%, rgba(80, 174, 187, 1) 63%, rgba(122, 87, 197, 1) 81%)",
+          filter: "blur(60px) brightness(1.1) contrast(1.1)",
           transform: "rotate(210deg)",
           transformOrigin: "right",
         }}
-        initial={{ opacity: 100 }}
+        initial={{ opacity: 0 }}
         animate={textDone ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
+        transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
       />
+
+
+
+
+
 
       {/* Massive SOLANA text at bottom */}
       <div
@@ -72,7 +78,7 @@ export default function Hero() {
 
       >
 
-        <TextHoverEffect text="FLEXANON" />
+        <span>FLEXANON</span>
       </div>
 
       {/* Hero content */}

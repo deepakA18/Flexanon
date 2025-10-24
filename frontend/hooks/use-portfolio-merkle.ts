@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-// utility to compute hex SHA256
-import { buildSparseMerkleTree, buildPortfolioLeaves,sha256 } from "@/lib/crypto-utils" // your existing logic
+import { sha256 } from "@/lib/crypto-utils" // utility to compute hex SHA256
+import { buildSparseMerkleTree, buildPortfolioLeaves } from "@/lib/crypto-utils" // your existing logic
 
 export function usePortfolioMerkle(apiBase: string, walletAddress: string | null) {
   const [merkleRootHex, setMerkleRootHex] = useState<string | null>(null)
@@ -14,7 +14,7 @@ export function usePortfolioMerkle(apiBase: string, walletAddress: string | null
 
     async function fetchPortfolio() {
       try {
-        const res = await fetch(`${process.env.BACKEND_URL}/dev/test-zerion`, {
+        const res = await fetch(`${apiBase}/dev/test-zerion`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ wallet_address: walletAddress }),

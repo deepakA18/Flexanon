@@ -1,3 +1,4 @@
+import ConnectWalletButton from "@/components/connect-wallet-button"
 import FlexAnonClient from "@/components/sections/flexanon-client"
 
 interface PageProps {
@@ -9,7 +10,8 @@ export default async function Page({ params }: PageProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center ">
-      <FlexAnonClient id={id} />
+<FlexAnonClient apiBase="https://flexanon-delta.vercel.app/api" />
+      <ConnectWalletButton />
     </div>
   )
 }

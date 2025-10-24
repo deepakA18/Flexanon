@@ -1,59 +1,62 @@
-import { base58Encode } from "@/lib/crypto-utils";
+"use client"
 
 export async function useShareLink({
   apiBase,
   walletAddress,
   merkleRootHex,
-  signMessage,
+  signMessage
 }: {
-  apiBase: string;
-  walletAddress: string;
-  merkleRootHex: string;
-  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  apiBase: string
+  walletAddress: string
+  merkleRootHex: string
+  signMessage: (message: Uint8Array) => Promise<{ signature: Uint8Array }>
 }) {
-  const timestamp = Date.now();
-  const message = `FlexAnon Commitment\n\nWallet: ${walletAddress}\nMerkle Root: ${merkleRootHex.substring(
-    0,
-    32
-  )}...\nTimestamp: ${timestamp}`;
+  // Encode and sign Merkle root
+  const encoded = new TextEncoder().encode(merkleRootHex)
+  const signed = await signMessage(encoded)
+  const base58Sig = base58Encode(signed.signature)
 
-  const signedMessage = await signMessage(new TextEncoder().encode(message));
-  const signature = base58Encode(signedMessage);
-
-  const relayResponse = await fetch(`${apiBase}/relayer/commit`, {
+  const res = await fetch(`${apiBase}/share/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       wallet_address: walletAddress,
+      signature: base58Sig,
+      message: `FlexAnon Ownership Verification\nWallet: ${walletAddress}`,
+      timestamp: Date.now(),
       merkle_root: merkleRootHex,
-      signature,
-      message,
-      timestamp,
-      metadata: { chain: "solana", snapshot_timestamp: timestamp, privacy_score: 75 },
+      reveal_preferences: {
+        show_total_value: true,
+        show_pnl: true,
+        show_top_assets: true,
+        top_assets_count: 5,
+        show_wallet_address: false
+      }
     }),
-  });
+  })
 
-  const relayData = await relayResponse.json();
-  if (!relayData.success) throw new Error(relayData.error || "Relayer commit failed");
+  const data = await res.json()
+  if (!data.success) throw new Error(data.user_friendly_message || "Failed to generate share link")
+  return data.share_url
+}
 
-  const linkMessage = `Verify ownership of ${walletAddress} at ${timestamp}`;
-  const linkSignature = base58Encode(await signMessage(new TextEncoder().encode(linkMessage)));
-
-  const genResponse = await fetch(`${apiBase}/share/generate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      wallet_address: walletAddress,
-      signature: linkSignature,
-      message: linkMessage,
-      timestamp,
-      commitment_address: relayData.commitment_address,
-      chain: "solana",
-    }),
-  });
-
-  const genData = await genResponse.json();
-  if (!genData.success) throw new Error(genData.error || "Link generation failed");
-
-  return genData.share_url;
+// Base58 helper
+const BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+function base58Encode(buffer: Uint8Array) {
+  const digits = [0]
+  for (let i = 0; i < buffer.length; i++) {
+    let carry = buffer[i]
+    for (let j = 0; j < digits.length; j++) {
+      carry += digits[j] << 8
+      digits[j] %= 58
+      carry = (carry / 58) | 0
+    }
+    while (carry > 0) {
+      digits.push(carry % 58)
+      carry = (carry / 58) | 0
+    }
+  }
+  // leading zeros
+  for (let i = 0; i < buffer.length && buffer[i] === 0; i++) digits.push(0)
+  return digits.reverse().map((d) => BASE58_ALPHABET[d]).join("")
 }
