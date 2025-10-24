@@ -26,46 +26,48 @@ export default function FlexAnonClient({
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const walletAddress = publicKey?.toBase58()
-  const { merkleRootHex } = usePortfolioMerkle(apiBase, walletAddress || null)
-  const { useUpdate } = useSubscription(apiBase, walletAddress || null)
+  const walletAddress = publicKey?.toBase58() ?? null;
+  const { merkleRootHex } = usePortfolioMerkle(apiBase, walletAddress )
+ const { subscription, fetchSubscription, updateSubscription } = useSubscription(apiBase, walletAddress);
 
   const delay = (ms: number) => new Promise((res) => setTimeout(res, ms))
-
-  const handleGenerate = async () => {
-    if (!walletAddress || !signMessage) {
-      toast.error("Please connect your wallet first.")
-      return
-    }
-
-    setLoading(true)
-    setShareUrl(null)
-
-    try {
-      const toastId = toast.loading("Fetching portfolio data...")
-
-      await delay(800) // simulate smooth step transition
-      toast.loading("Verifying data integrity...", { id: toastId })
-
-      const link = await useShareLink({ apiBase, walletAddress, merkleRootHex, signMessage })
-
-      toast.loading("Submitting portfolio to relayer...", { id: toastId })
-      await useUpdate()
-      await delay(600)
-
-      setShareUrl(link)
-      toast.success("✅ Share link generated successfully!", { id: toastId })
-    } catch (err: any) {
-      // 3-step error toasts chain
-      toast.error("❌ Something went wrong during generation.")
-      await delay(500)
-      toast.error("Check your wallet connection or API endpoint.")
-      await delay(700)
-      toast.error(err?.message || "Unknown error occurred.")
-    } finally {
-      setLoading(false)
-    }
+const handleGenerate = async () => {
+  if (!walletAddress || !merkleRootHex || !signMessage) {
+    toast.error("Wallet or portfolio not ready yet.");
+    return;
   }
+
+  setLoading(true);
+  setShareUrl(null);
+
+  try {
+    const toastId = toast.loading("Fetching portfolio data...");
+    await delay(800);
+    toast.loading("Verifying data integrity...", { id: toastId });
+
+    // Now safe: walletAddress and merkleRootHex are guaranteed to be strings
+    const link = await useShareLink({
+      apiBase,
+      walletAddress,
+      merkleRootHex,
+      signMessage
+    });
+
+    toast.loading("Submitting portfolio to relayer...", { id: toastId });
+    await updateSubscription();
+    await delay(600);
+
+    setShareUrl(link);
+    toast.success("✅ Share link generated successfully!", { id: toastId });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    toast.error(message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   const handleCopyLink = () => {
     if (!shareUrl) return

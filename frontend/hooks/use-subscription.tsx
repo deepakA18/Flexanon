@@ -10,7 +10,7 @@ export function useSubscription(apiBase: string, walletAddress: string | null) {
     setSubscription(data);
   };
 
-  const useUpdate = async () => {
+  const updateSubscription = async () => {  // <-- rename here
     if (!walletAddress) return;
     await fetch(`${apiBase}/subscription/use-update`, {
       method: "POST",
@@ -20,5 +20,5 @@ export function useSubscription(apiBase: string, walletAddress: string | null) {
     await fetchSubscription();
   };
 
-  return { subscription, fetchSubscription, useUpdate };
+  return { subscription, fetchSubscription, updateSubscription }; // <-- return renamed function
 }

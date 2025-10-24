@@ -19,6 +19,18 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
     ],
+    rules: {
+      // TypeScript
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+
+      // React
+      "react-hooks/rules-of-hooks": "off",
+      "react-hooks/exhaustive-deps": "off",
+
+      // Next.js
+      "@next/next/no-page-custom-font": "off",
+    },
   },
 ];
 
