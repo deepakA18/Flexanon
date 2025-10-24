@@ -71,10 +71,10 @@ app.use('/api/share', shareRoutes);
 app.use('/api/relayer', relayerRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 
-if (process.env.NODE_ENV === 'development') {
-  app.use('/api/dev', devRoutes);
-  console.log('[DEV] Development routes enabled');
-}
+
+app.use('/api/dev', devRoutes);
+console.log('[DEV] Development routes enabled');
+
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ error: 'Route not found' });
