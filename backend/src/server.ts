@@ -158,8 +158,25 @@ async function initialize() {
     initialized = true;
     console.log('[INIT] Backend initialized successfully');
   } catch (error) {
-    console.error('[ERROR] Failed to initialize:', error);
-    throw error;
+    console.error('[ERROR] Failed to initialize database:', error);
+    console.warn('[WARN] Continuing without database - some features may not work');
+    
+    // Still initialize Solana even if database fails
+    try {
+      console.log('[INIT] Connecting to Solana...');
+      const solanaClient = getSolanaClient();
+      const networkInfo = await solanaClient.getNetworkInfo();
+      
+      if (networkInfo) {
+        console.log(`[SOLANA] Connected to ${networkInfo.network} (slot: ${networkInfo.slot})`);
+      }
+      
+      initialized = true;
+      console.log('[INIT] Backend initialized (without database)');
+    } catch (solanaError) {
+      console.error('[ERROR] Failed to initialize Solana:', solanaError);
+      throw solanaError;
+    }
   }
 }
 

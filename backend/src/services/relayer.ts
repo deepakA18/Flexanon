@@ -2,9 +2,9 @@ import { Connection, Keypair, PublicKey, SystemProgram } from '@solana/web3.js';
 import { Program, AnchorProvider, Wallet} from '@coral-xyz/anchor';
 import * as fs from 'fs';
 import * as path from 'path';
-import { fileURLToPath } from 'url';
 import bs58 from 'bs58';
 import BN from 'bn.js';
+import { IDL } from './flexanon-idl.js';
 
 export interface RelayCommitRequest {
   userWallet: string;
@@ -54,13 +54,9 @@ export class RelayerService {
       commitment: 'confirmed'
     });
 
-    // Load IDL from file in same directory as this service
-    console.log('[RELAYER] Loading IDL from file');
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const idlPath = path.join(__dirname, 'flexanon-idl.json');
-    console.log(`[RELAYER] IDL path: ${idlPath}`);
-    const idl = JSON.parse(fs.readFileSync(idlPath, 'utf-8'));
+    // Use embedded IDL constant
+    console.log('[RELAYER] Loading IDL from embedded constant');
+    const idl = IDL as any;
 
     if (idl.accounts && idl.accounts[0] && !idl.accounts[0].type) {
       const shareCommitmentType = idl.types.find((t: any) => t.name === 'ShareCommitment');
