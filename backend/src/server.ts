@@ -100,11 +100,10 @@ app.use('/api/share', shareRoutes);
 app.use('/api/relayer', relayerRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 
-// Dev routes - ONLY if development
-if (process.env.NODE_ENV === 'development') {
-  app.use('/api/dev', devRoutes);
-  console.log('[DEV] Development routes enabled at /api/dev');
-}
+
+app.use('/api/dev', devRoutes);
+
+
 
 // 404 handler - AFTER all routes
 app.use((req: Request, res: Response) => {
