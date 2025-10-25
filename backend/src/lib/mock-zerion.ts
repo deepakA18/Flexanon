@@ -73,6 +73,41 @@ export class MockZerionClient {
   async healthCheck(): Promise<boolean> {
     return true;
   }
+
+  /**
+   * Mock chart data
+   */
+  async getChartData(
+    walletAddress: string,
+    period: 'day' | 'week' | 'month' | 'year' = 'day'
+  ) {
+    console.log(`🎭 MOCK: Generating fake chart data for ${walletAddress} (${period})...`);
+    
+    // Generate mock time series data
+    const now = Date.now();
+    const intervals = period === 'day' ? 288 : period === 'week' ? 168 : period === 'month' ? 720 : 365; // 5min intervals for day
+    const interval = period === 'day' ? 300000 : period === 'week' ? 3600000 : period === 'month' ? 3600000 : 86400000; // ms per interval
+    
+    const baseValue = Math.random() * 10000 + 1000;
+    const points: [number, number][] = [];
+    
+    for (let i = 0; i < intervals; i++) {
+      const timestamp = Math.floor((now - (intervals - i) * interval) / 1000);
+      const variation = (Math.random() - 0.5) * baseValue * 0.1; // ±10% variation
+      const value = baseValue + variation;
+      points.push([timestamp, value]);
+    }
+    
+    return {
+      type: 'wallet_chart',
+      id: `${walletAddress}-${period}`,
+      attributes: {
+        begin_at: new Date(now - intervals * interval).toISOString(),
+        end_at: new Date(now).toISOString(),
+        points
+      }
+    };
+  }
 }
 
 /**

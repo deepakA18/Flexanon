@@ -103,7 +103,7 @@ app.use('/api/share', shareRoutes);
 app.use('/api/relayer', relayerRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 
-
+// Dev routes - enabled for hackathon demo
 app.use('/api/dev', devRoutes);
 
 
