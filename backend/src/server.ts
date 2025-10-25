@@ -41,6 +41,9 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Handle OPTIONS requests explicitly for CORS preflight
+app.options('*', cors(corsOptions));
+
 // Request logging middleware
 app.use((req: Request, res: Response, next) => {
   const start = Date.now();

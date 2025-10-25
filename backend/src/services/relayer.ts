@@ -53,8 +53,20 @@ export class RelayerService {
       commitment: 'confirmed'
     });
 
-    const idlPath = path.join(process.cwd(), '../solana-programs/target/idl/flexanon.json');
-    const idlJson = JSON.parse(fs.readFileSync(idlPath, 'utf-8'));
+    // Load IDL - try environment variable first (for production), then file (for local)
+    let idlJson;
+    const idlEnv = process.env.FLEXANON_IDL;
+    
+    if (idlEnv) {
+      // Production: IDL from environment variable
+      console.log('[RELAYER] Loading IDL from environment variable');
+      idlJson = JSON.parse(idlEnv);
+    } else {
+      // Local development: IDL from file
+      console.log('[RELAYER] Loading IDL from file');
+      const idlPath = path.join(process.cwd(), '../solana-programs/target/idl/flexanon.json');
+      idlJson = JSON.parse(fs.readFileSync(idlPath, 'utf-8'));
+    }
 
     if (idlJson.accounts && idlJson.accounts[0] && !idlJson.accounts[0].type) {
       const shareCommitmentType = idlJson.types.find((t: any) => t.name === 'ShareCommitment');
@@ -71,24 +83,35 @@ export class RelayerService {
   }
 
   private loadRelayerKeypair(): Keypair {
+    // 1. Try base58 encoded private key from environment (PRODUCTION)
     const privateKeyEnv = process.env.RELAYER_PRIVATE_KEY;
     if (privateKeyEnv) {
       try {
+        console.log('[RELAYER] Loading keypair from RELAYER_PRIVATE_KEY (base58)');
         const secretKey = bs58.decode(privateKeyEnv);
+        if (secretKey.length !== 64) {
+          throw new Error(`Invalid key length: ${secretKey.length}, expected 64 bytes`);
+        }
         return Keypair.fromSecretKey(secretKey);
-      } catch (error) {
-        console.warn('[RELAYER] Failed to load from env, trying file...');
+      } catch (error: any) {
+        console.error('[RELAYER] Failed to decode base58 private key:', error.message);
+        throw new Error(`Invalid RELAYER_PRIVATE_KEY: ${error.message}`);
       }
     }
 
+    // 2. Try keypair file path (LOCAL DEVELOPMENT)
     const keypairPath = process.env.RELAYER_KEYPAIR_PATH || 
                         path.join(process.env.HOME || '', '.config/solana/id.json');
     
     try {
+      console.log(`[RELAYER] Loading keypair from file: ${keypairPath}`);
       const keypairData = JSON.parse(fs.readFileSync(keypairPath, 'utf-8'));
       return Keypair.fromSecretKey(Uint8Array.from(keypairData));
-    } catch (error) {
-      throw new Error('Failed to load relayer keypair');
+    } catch (error: any) {
+      console.error(`[RELAYER] Failed to load keypair from file:`, error.message);
+      throw new Error(
+        'Failed to load relayer keypair. Set RELAYER_PRIVATE_KEY (base58) or RELAYER_KEYPAIR_PATH'
+      );
     }
   }
 

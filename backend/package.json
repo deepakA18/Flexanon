@@ -13,7 +13,10 @@
     "test:merkle": "tsx tests/test-merkle.ts",
     "test:integration": "mocha --require tsx/cjs --timeout 60000 tests/integration.test.ts",
     "test:e2e": "mocha --require tsx/cjs --timeout 60000 tests/e2e-zerion.test.ts",
-    "test": "npm run test:merkle && npm run test:integration && npm run test:e2e"
+    "test": "npm run test:merkle && npm run test:integration && npm run test:e2e",
+    "vercel:setup": "node scripts/keypair-to-base58.js && echo '\n---\n' && node scripts/extract-idl.js",
+    "vercel:keypair": "node scripts/keypair-to-base58.js",
+    "vercel:idl": "node scripts/extract-idl.js"
   },
   "keywords": [
     "solana",
