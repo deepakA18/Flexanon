@@ -62,9 +62,10 @@ export class RelayerService {
       console.log('[RELAYER] Loading IDL from environment variable');
       idlJson = JSON.parse(idlEnv);
     } else {
-      // Local development: IDL from file
+      // Local development: IDL from file in backend folder
       console.log('[RELAYER] Loading IDL from file');
-      const idlPath = path.join(process.cwd(), '../solana-programs/target/idl/flexanon.json');
+      const idlPath = path.join(process.cwd(), 'flexanon-idl.json');
+      console.log(`[RELAYER] IDL path: ${idlPath}`);
       idlJson = JSON.parse(fs.readFileSync(idlPath, 'utf-8'));
     }
 
