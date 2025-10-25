@@ -2,6 +2,7 @@ import { Connection, Keypair, PublicKey, SystemProgram } from '@solana/web3.js';
 import { Program, AnchorProvider, Wallet} from '@coral-xyz/anchor';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import bs58 from 'bs58';
 import BN from 'bn.js';
 
