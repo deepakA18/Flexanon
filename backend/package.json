@@ -6,7 +6,7 @@
   "main": "src/server.ts",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && cp src/flexanon-idl.json dist/services/flexanon-idl.json",
     "start": "node dist/server.js",
     "db:setup": "tsx scripts/setup-db.ts",
     "db:reset": "tsx scripts/reset-db.ts",

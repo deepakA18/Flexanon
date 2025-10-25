@@ -15,12 +15,13 @@ export function getPool(): Pool {
       throw new Error('DATABASE_URL not set in environment variables');
     }
 
+    // Serverless-optimized configuration
     pool = new Pool({
       connectionString,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      ssl: { rejectUnauthorized: false },
+      max: 1, // Keep low for serverless
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 10000, // Increased timeout
     });
 
     pool.on('error', (err) => {
