@@ -2,6 +2,7 @@ import { Connection, Keypair, PublicKey, SystemProgram } from '@solana/web3.js';
 import { Program, AnchorProvider, Wallet} from '@coral-xyz/anchor';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import bs58 from 'bs58';
 import BN from 'bn.js';
 
@@ -53,30 +54,22 @@ export class RelayerService {
       commitment: 'confirmed'
     });
 
-    // Load IDL - try environment variable first (for production), then file (for local)
-    let idlJson;
-    const idlEnv = process.env.FLEXANON_IDL;
-    
-    if (idlEnv) {
-      // Production: IDL from environment variable
-      console.log('[RELAYER] Loading IDL from environment variable');
-      idlJson = JSON.parse(idlEnv);
-    } else {
-      // Local development: IDL from file in backend folder
-      console.log('[RELAYER] Loading IDL from file');
-      const idlPath = path.join(process.cwd(), 'flexanon-idl.json');
-      console.log(`[RELAYER] IDL path: ${idlPath}`);
-      idlJson = JSON.parse(fs.readFileSync(idlPath, 'utf-8'));
-    }
+    // Load IDL from file in same directory as this service
+    console.log('[RELAYER] Loading IDL from file');
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const idlPath = path.join(__dirname, 'flexanon-idl.json');
+    console.log(`[RELAYER] IDL path: ${idlPath}`);
+    const idl = JSON.parse(fs.readFileSync(idlPath, 'utf-8'));
 
-    if (idlJson.accounts && idlJson.accounts[0] && !idlJson.accounts[0].type) {
-      const shareCommitmentType = idlJson.types.find((t: any) => t.name === 'ShareCommitment');
+    if (idl.accounts && idl.accounts[0] && !idl.accounts[0].type) {
+      const shareCommitmentType = idl.types.find((t: any) => t.name === 'ShareCommitment');
       if (shareCommitmentType) {
-        idlJson.accounts[0].type = shareCommitmentType.type;
+        idl.accounts[0].type = shareCommitmentType.type;
       }
     }
 
-    this.program = new Program(idlJson as any, provider);
+    this.program = new Program(idl, provider);
 
     console.log('[RELAYER] Service initialized');
     console.log(`[RELAYER] Wallet: ${this.relayerKeypair.publicKey.toString()}`);
