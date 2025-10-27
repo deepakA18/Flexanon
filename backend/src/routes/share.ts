@@ -459,17 +459,5 @@ router.get('/my-tokens', async (req: Request, res: Response) => {
   }
 });
 
-/**
- * REMOVED: GET /api/share/commitment/:address
- * 
- * This endpoint was REMOVED for privacy reasons:
- * - It exposed wallet addresses publicly
- * - Anyone could query any commitment by guessing addresses
- * - Defeats the purpose of privacy-first design
- * 
- * Commitment data is now ONLY accessible through:
- * 1. Share tokens (controlled by owner)
- * 2. On-chain queries (but only if you know the commitment PDA)
- */
 
 export default router;

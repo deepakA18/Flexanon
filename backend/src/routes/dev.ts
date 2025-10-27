@@ -21,7 +21,7 @@ router.post('/test-zerion', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'wallet_address is required' });
     }
 
-    console.log(`🧪 [DEV TEST] Fetching portfolio for ${wallet_address}...`);
+    console.log(`Fetching portfolio for ${wallet_address}...`);
 
     // Validate Solana address
     try {
