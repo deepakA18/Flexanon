@@ -3,6 +3,7 @@
 import React from 'react'
 import { Wallet } from 'lucide-react'
 import { Asset } from './types'
+import Image from 'next/image'
 
 interface AssetGridProps {
   assets?: Asset[]
@@ -27,9 +28,9 @@ export default function AssetGrid({ assets }: AssetGridProps) {
                    hover:shadow-md hover:border-gray-300 transition-all duration-200"
         >
           {asset.icon_url && (
-            <img 
+            <Image 
               src={asset.icon_url} 
-              alt={asset.symbol} 
+              alt={asset.symbol || ""} 
               className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100" 
             />
           )}

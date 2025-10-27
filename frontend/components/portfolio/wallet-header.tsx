@@ -35,7 +35,7 @@ export default function WalletHeader({
               <div>
                 <p className="text-xs text-neutral-400 uppercase tracking-widest">Connected Wallet</p>
                 <p className="text-base font-mono font-semibold text-white">
-                  {truncateAddress(walletAddress)}
+                  {truncateAddress(walletAddress || "")}
                 </p>
               </div>
             </div>

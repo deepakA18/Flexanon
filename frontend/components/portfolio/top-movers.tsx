@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { TrendingUp, TrendingDown, Zap } from 'lucide-react'
+import Image from 'next/image'
 
 interface Position {
   symbol: string
@@ -45,7 +46,7 @@ export default function TopMovers({ positions = [] }: TopMoversProps) {
             >
               <div className="flex items-center gap-3">
                 {position.icon_url && (
-                  <img
+                  <Image
                     src={position.icon_url}
                     alt={position.symbol}
                     className="w-8 h-8 rounded-full"

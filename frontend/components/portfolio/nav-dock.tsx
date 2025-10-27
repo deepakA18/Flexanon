@@ -17,10 +17,11 @@ export default async function NavDock({ walletAddress }: NavDockProps) {
   }
 
   return (
-    <nav className="absolute top-0 flex flex-row justify-between w-full p-5  z-50">
+    <nav className="absolute top-0 flex flex-row justify-between w-full p-5 z-50">
       <div className="flex-1 text-xl font-bold text-white">FlexAnon</div>
 
       <div className="flex flex-row items-center gap-4">
+        {/* @ts-expect-error Server Component - planData type mismatch with client component props */}
         {planData && <PlanStatusCard data={planData} />}
         <ConnectWalletButton />
       </div>

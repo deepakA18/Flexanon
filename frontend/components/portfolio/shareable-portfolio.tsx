@@ -13,6 +13,7 @@ import AssetCards from './asset-card'
 import PortfolioMetrics from './portfolio-metrics'
 import TopMovers from './top-movers'
 import QuickStats from './quick-stats'
+import type { PortfolioData } from './types'
 
 interface ShareablePortfolioProps {
   shareId: string
@@ -150,27 +151,39 @@ export default function ShareablePortfolio({
     }
   }
 
-  const getDisplayData = (source: 'committed' | 'live') => {
+  const getDisplayData = (source: 'committed' | 'live'): PortfolioData => {
     if (source === 'live' && liveData) {
       return {
+        wallet_address: liveData.wallet_address || '',
         total_value: liveData.total_value || 0,
         pnl_percentage: liveData.pnl_percentage || 0,
         assets_count: liveData.assets?.length || 0,
         chain: liveData.chain || 'solana',
-        snapshot_timestamp: new Date().toISOString(),
+        snapshot_timestamp: Date.now(),
         assets: liveData.assets || []
       }
     } else if (committedData?.revealed_data) {
       return {
+        wallet_address: committedData.wallet_address || '',
         total_value: parseFloat(committedData.revealed_data.total_value?.replace(/[^0-9.-]+/g, '') || '0'),
         pnl_percentage: parseFloat(committedData.revealed_data.pnl_percentage?.replace(/[^0-9.-]+/g, '') || '0') / 100,
         assets_count: committedData.revealed_data.total_assets_count || 0,
         chain: committedData.revealed_data.chain || 'solana',
-        snapshot_timestamp: committedData.revealed_data.snapshot_time,
+        snapshot_timestamp: committedData.revealed_data.snapshot_time 
+          ? new Date(committedData.revealed_data.snapshot_time).getTime() 
+          : Date.now(),
         assets: committedData.revealed_data.top_assets || []
       }
     }
-    return null
+    return {
+      wallet_address: '',
+      total_value: 0,
+      pnl_percentage: 0,
+      assets_count: 0,
+      chain: 'solana',
+      snapshot_timestamp: Date.now(),
+      assets: []
+    }
   }
 
   const getPositions = (source: 'committed' | 'live') => {
@@ -231,6 +244,10 @@ export default function ShareablePortfolio({
   const revealedCount = committedData?.revealed_count || committedData?.metadata?.revealed_count || 0
   const totalCount = committedData?.total_count || committedData?.metadata?.total_count || 0
 
+  // Active portfolio and positions
+  const activePortfolio = showLiveData ? livePortfolio : committedPortfolio
+  const activePositions = showLiveData ? livePositions : committedPositions
+
   // If showing live data, create chart data from live
   const chartData = showLiveData && liveData ? {
     chart_data: {
@@ -279,7 +296,6 @@ export default function ShareablePortfolio({
                   ℹ️ This data was verified {dataAge.ageText} and committed to the Solana blockchain.
                 </p>
               </div>
-              
             </div>
           </div>
         )}
@@ -331,60 +347,51 @@ export default function ShareablePortfolio({
           {/* 1. Total Portfolio Value Card */}
           <div className={`${cardClasses} md:col-span-4`}>
             <PortfolioValue
-              totalValue={showLiveData ? livePortfolio?.total_value : committedPortfolio?.total_value}
-              pnlPercentage={showLiveData ? livePortfolio?.pnl_percentage : committedPortfolio?.pnl_percentage}
-              positions={showLiveData ? livePositions : committedPositions}
+              totalValue={activePortfolio.total_value}
+              pnlPercentage={activePortfolio.pnl_percentage}
+              positions={activePositions}
             />
           </div>
 
           {/* 4. Portfolio Performance Card */}
           <div className={`${cardClasses} md:col-span-4`}>
-            <PortfolioPerformance positions={showLiveData ? livePositions : committedPositions} />
+            <PortfolioPerformance positions={activePositions} />
           </div>
 
           {/* 9. Quick Stats Card */}
           <div className={`${cardClasses} md:col-span-4`}>
-            <QuickStats portfolio={showLiveData ? livePortfolio : committedPortfolio} />
+            <QuickStats portfolio={activePortfolio} />
           </div>
-
-          {/* 7. Portfolio Metrics Card */}
-         
         </div>
 
         {/* Second Row - Charts (EXACT SAME AS PORTFOLIO CARD) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-         
- <div className={`${cardClasses} md:col-span-4`}>
+          <div className={`${cardClasses} md:col-span-4`}>
             <PortfolioMetrics 
-              portfolio={showLiveData ? livePortfolio : committedPortfolio} 
-              positions={showLiveData ? livePositions : committedPositions} 
+              portfolio={activePortfolio} 
+              positions={activePositions} 
             />
           </div>
           {/* 5. Asset Allocation Card */}
           <div className={`${cardClasses} md:col-span-4`}>
             <AssetAllocation 
-              positions={showLiveData ? livePositions : committedPositions} 
-              totalValue={showLiveData ? livePortfolio?.total_value : committedPortfolio?.total_value} 
+              positions={activePositions} 
+              totalValue={activePortfolio.total_value} 
             />
           </div>
-           <div className={`${cardClasses} md:col-span-4`}>
-            <TopMovers positions={showLiveData ? livePositions : committedPositions} />
+          <div className={`${cardClasses} md:col-span-4`}>
+            <TopMovers positions={activePositions} />
           </div>
         </div>
 
         {/* Third Row - Assets (EXACT SAME AS PORTFOLIO CARD) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
           {/* 3. Top Assets Card (Table) */}
-          <div className={`${cardClasses} md:col-span-8`}>
-            <TopAssetsList positions={showLiveData ? livePositions : committedPositions} />
+          <div className={`${cardClasses} md:col-span-12`}>
+            <TopAssetsList positions={activePositions} />
           </div>
-
-          {/* 8. Top Movers Card */}
-         
         </div>
 
-        {/* Fourth Row - Individual Asset Cards (EXACT SAME AS PORTFOLIO CARD) */}
-        
         {/* Footer (EXACT SAME AS PORTFOLIO CARD) */}
         {(committedPortfolio?.snapshot_timestamp || committedData?.committed_at) && (
           <div className="text-center py-4 space-y-2">
@@ -403,7 +410,6 @@ export default function ShareablePortfolio({
                 </>
               )}
             </p>
-          
           </div>
         )}
 

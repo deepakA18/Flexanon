@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { TrendingUp, TrendingDown } from 'lucide-react'
+import Image from 'next/image'
 
 interface Position {
   symbol: string
@@ -36,7 +37,7 @@ export default function AssetCards({ positions = [] }: AssetCardsProps) {
             {/* Icon & Symbol */}
             <div className="flex flex-col items-center text-center space-y-2">
               {position.icon_url && (
-                <img
+                <Image
                   src={position.icon_url}
                   alt={position.symbol}
                   className="w-12 h-12 rounded-full ring-2 ring-gray-200"

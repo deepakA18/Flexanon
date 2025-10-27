@@ -2,14 +2,10 @@
 
 import React from 'react'
 import { BarChart3, Link2, Layers, Clock } from 'lucide-react'
+import { PortfolioData } from './types'
 
 interface PortfolioMetricsProps {
-  portfolio?: {
-    wallet_address?: string
-    chain?: string
-    total_value?: number
-    snapshot_timestamp?:string
-  }
+  portfolio?: PortfolioData
   positions?: any[]
 }
 

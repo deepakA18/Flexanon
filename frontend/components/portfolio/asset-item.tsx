@@ -4,6 +4,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import type { Asset } from './types'
 import { formatCurrency } from './utils'
+import Image from 'next/image'
 
 interface AssetItemProps {
   asset: Asset
@@ -23,9 +24,9 @@ export default function AssetItem({ asset, index }: AssetItemProps) {
      
       {/* Icon */}
       {asset?.icon_url ? (
-        <img
+        <Image
           src={asset.icon_url}
-          alt={asset.symbol}
+          alt={asset.symbol || ""}
           className="w-8 h-8 rounded-full object-cover border border-white/10"
           onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
             e.currentTarget.style.display = 'none'

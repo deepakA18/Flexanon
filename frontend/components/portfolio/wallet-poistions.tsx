@@ -1,5 +1,6 @@
 'use client'
 
+import Image from "next/image"
 import React from "react"
 
 interface Position {
@@ -39,7 +40,7 @@ export default function WalletPositions({ positions }: Props) {
                      transition-all duration-200"
         >
           {pos.icon_url && (
-            <img
+            <Image
               src={pos.icon_url}
               alt={pos.symbol}
               className="w-9 h-9 rounded-full object-cover ring-2 ring-gray-100 flex-shrink-0"

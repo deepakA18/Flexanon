@@ -251,7 +251,7 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
     // Check subscription limits
     if (subscription) {
       const { updates_remaining } = subscription
-      if (updates_remaining <= 0) {
+      if (updates_remaining ||0 <= 0) {
         toast?.error?.('No updates remaining. Please upgrade your plan.')
         return
       }
