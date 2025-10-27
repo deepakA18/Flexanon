@@ -1,34 +1,19 @@
-"use client"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
-import { motion } from "framer-motion"
+import React from 'react'
+import { Loader2 } from 'lucide-react'
 
 interface StatusMessageProps {
-  status: { message: string; type: "info" | "success" | "error" } | null
+  status: string
 }
 
-export default function StatusMessage({ status }: StatusMessageProps) {
+export const StatusMessage: React.FC<StatusMessageProps> = ({ status }) => {
   if (!status) return null
 
   return (
-    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-      <Alert
-        variant={status.type === "error" ? "destructive" : "default"}
-        className={`border-0 ${
-          status.type === "success"
-            ? "bg-green-50 text-green-900"
-            : status.type === "error"
-              ? "bg-red-50 text-red-900"
-              : "bg-blue-50 text-blue-900"
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          {status.type === "success" && <CheckCircle2 className="w-4 h-4" />}
-          {status.type === "error" && <AlertCircle className="w-4 h-4" />}
-          {status.type === "info" && <Loader2 className="w-4 h-4 animate-spin" />}
-          <AlertDescription>{status.message}</AlertDescription>
-        </div>
-      </Alert>
-    </motion.div>
+    <div className="p-3 rounded-lg border border-blue-200 bg-blue-50">
+      <div className="flex items-center gap-2">
+        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+        <p className="text-sm text-blue-700">{status}</p>
+      </div>
+    </div>
   )
 }

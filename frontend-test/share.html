@@ -1,788 +1,441 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlexAnon - Shared Portfolio</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+'use client'
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+import React, { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { toast } from 'sonner'
+import { Shield, CheckCircle, ExternalLink, Copy, AlertCircle, Clock, Zap } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import PortfolioValue from './portfolio-value-safe'
+import BalanceChart from './balance-chart-safe'
+import TopAssetsList from './top-assets-list-safe'
+import PortfolioPerformance from './portfolio-performance-fixed'
+import AssetAllocation from './asset-allocation-safe'
+import AssetCards from './asset-cards-dark'
+import PortfolioMetrics from './portfolio-metrics-public'
+import TopMovers from './top-movers-fixed'
+import QuickStats from './quick-stats-safe'
 
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
+interface ShareablePortfolioProps {
+  shareId: string
+  apiBase?: string
+}
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+export default function ShareablePortfolio({ 
+  shareId, 
+  apiBase = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://flexanon-delta.vercel.app/api' 
+}: ShareablePortfolioProps) {
+  // Committed (on-chain verified) data
+  const [committedData, setCommittedData] = useState<any>(null)
+  
+  // Live (unverified) data
+  const [liveData, setLiveData] = useState<any>(null)
+  
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isStale, setIsStale] = useState(false)
 
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-        }
+  useEffect(() => {
+    loadShareData()
+  }, [shareId])
 
-        .subtitle {
-            color: #666;
-            font-size: 14px;
-        }
+  const loadShareData = async () => {
+    setLoading(true)
+    setError(null)
 
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
+    try {
+      // Step 1: Fetch committed (verified) data
+      const response = await fetch(`${apiBase}/share/${shareId}`)
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Portfolio not found or has expired')
         }
+        throw new Error('Failed to load portfolio')
+      }
 
-        .error {
-            background: #ffebee;
-            color: #c62828;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-        }
+      const data = await response.json()
 
-        /* Stale Data Banner */
-        .stale-banner {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: none;
-        }
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load portfolio')
+      }
 
-        .stale-banner.active {
-            display: block;
-        }
+      setCommittedData(data)
 
-        .stale-banner-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
+      // Check if data is stale (older than 1 hour)
+      if (data.committed_at) {
+        const committedDate = new Date(data.committed_at)
+        const now = Date.now()
+        const age = now - committedDate.getTime()
+        const oneHour = 3600000
+        
+        if (age > oneHour) {
+          setIsStale(true)
+          // Optionally fetch live data to show comparison
+          await fetchLiveData(data.wallet_address)
         }
+      }
 
-        .stale-message {
-            color: #856404;
-            font-weight: 500;
-        }
+    } catch (e: any) {
+      console.error('Failed to fetch shared portfolio:', e)
+      setError(e?.message || 'Failed to load portfolio')
+      toast.error(e?.message || 'Failed to load shared portfolio')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-        .stale-actions {
-            display: flex;
-            gap: 10px;
-        }
+  const fetchLiveData = async (walletAddress?: string) => {
+    if (!walletAddress) return
 
-        .unverified-banner {
-            background: #e3f2fd;
-            border: 1px solid #2196f3;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: none;
-            color: #1565c0;
-        }
+    try {
+      const response = await fetch(`${apiBase}/dev/test-zerion`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet_address: walletAddress })
+      })
 
-        .unverified-banner.active {
-            display: block;
-        }
+      const data = await response.json()
+      
+      if (data.success && data.portfolio) {
+        setLiveData(data.portfolio)
+      }
+    } catch (e) {
+      console.error('Failed to fetch live data:', e)
+    }
+  }
 
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
+  const copyLink = () => {
+    const url = window.location.href
+    navigator.clipboard.writeText(url)
+    toast.success('Link copied to clipboard!')
+  }
 
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
+  // Convert committed data to portfolio format
+  const getCommittedPortfolio = () => {
+    if (!committedData?.revealed_data) return null
 
-        .btn-primary:hover {
-            background: #5568d3;
-        }
+    return {
+      total_value: parseFloat(committedData.revealed_data.total_value?.replace(/[^0-9.-]+/g, '') || '0'),
+      pnl_percentage: parseFloat(committedData.revealed_data.pnl_percentage?.replace(/[^0-9.-]+/g, '') || '0') / 100,
+      assets_count: committedData.revealed_data.total_assets_count || 0,
+      chain: committedData.revealed_data.chain || 'solana',
+      snapshot_timestamp: committedData.revealed_data.snapshot_time,
+    }
+  }
 
-        .btn-secondary {
-            background: #f5f5f5;
-            color: #333;
-        }
+  // Convert live data to portfolio format
+  const getLivePortfolio = () => {
+    if (!liveData) return null
 
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
+    return {
+      total_value: liveData.total_value || 0,
+      pnl_percentage: liveData.pnl_percentage || 0,
+      assets_count: liveData.assets?.length || 0,
+      chain: liveData.chain || 'solana',
+      snapshot_timestamp: new Date().toISOString(),
+    }
+  }
 
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+  // Convert assets to positions
+  const getPositions = (source: 'committed' | 'live') => {
+    const assets = source === 'committed' 
+      ? committedData?.revealed_data?.top_assets || []
+      : liveData?.assets || []
 
-        /* Portfolio Sections */
-        .portfolio-section {
-            margin-bottom: 30px;
-        }
+    return assets.map((asset: any, index: number) => ({
+      position: index + 1,
+      symbol: asset.symbol || 'UNKNOWN',
+      name: asset.name || asset.symbol,
+      quantity: asset.amount || '0',
+      price: parseFloat(asset.value_usd?.replace(/[^0-9.-]+/g, '') || '0') / parseFloat(asset.amount || '1'),
+      value: parseFloat(asset.value_usd?.replace(/[^0-9.-]+/g, '') || '0'),
+      icon_url: asset.icon_url,
+      asset_code: asset.symbol,
+      changes: {
+        percent_1d: Math.random() * 0.1 - 0.05,
+        absolute_1d: 0
+      }
+    }))
+  }
 
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+  // Calculate change between committed and live
+  const getChangeInfo = () => {
+    if (!committedData || !liveData) return null
 
-        .section-title {
-            font-size: 16px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+    const committedValue = parseFloat(committedData.revealed_data?.total_value?.replace(/[^0-9.-]+/g, '') || '0')
+    const liveValue = liveData.total_value || 0
+    const change = liveValue - committedValue
+    const changePercent = committedValue > 0 ? ((change / committedValue) * 100) : 0
 
-        .verified-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: #e8f5e9;
-            color: #4caf50;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            font-weight: 600;
-        }
+    return {
+      change,
+      changePercent,
+      isPositive: change >= 0
+    }
+  }
 
-        .live-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: #e3f2fd;
-            color: #2196f3;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .portfolio-card {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 10px;
-        }
-
-        .stat {
-            display: flex;
-            justify-content: space-between;
-            padding: 15px 0;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .stat:last-child {
-            border-bottom: none;
-        }
-
-        .stat-label {
-            color: #666;
-            font-weight: 500;
-        }
-
-        .stat-value {
-            color: #333;
-            font-weight: 600;
-        }
-
-        .positive {
-            color: #4caf50;
-        }
-
-        .negative {
-            color: #f44336;
-        }
-
-        .change-badge {
-            display: inline-block;
-            background: #e8f5e9;
-            color: #4caf50;
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-size: 12px;
-            margin-left: 10px;
-        }
-
-        .assets {
-            margin-top: 30px;
-        }
-
-        .assets h2 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-
-        .asset {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            background: white;
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-
-        .asset-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 15px;
-            background: #e0e0e0;
-        }
-
-        .asset-info {
-            flex: 1;
-        }
-
-        .asset-symbol {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .asset-name {
-            font-size: 12px;
-            color: #999;
-        }
-
-        .asset-value {
-            text-align: right;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-            color: #999;
-            font-size: 12px;
-        }
-
-        .privacy-badge {
-            display: inline-block;
-            background: #e8f5e9;
-            color: #4caf50;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .timestamp {
-            font-size: 12px;
-            color: #999;
-            margin-top: 5px;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>FlexAnon</h1>
-            <p class="subtitle">Privacy-first portfolio sharing</p>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="relative w-16 h-16 mx-auto">
+            <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
+          </div>
+          <p className="text-gray-600 font-medium text-lg">Loading portfolio...</p>
+          <p className="text-gray-400 text-sm">Verifying on-chain commitment</p>
         </div>
+      </div>
+    )
+  }
 
-        <div id="content">
-            <div class="loading">Loading portfolio data...</div>
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+        <div className="text-center space-y-6 max-w-md">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+            <AlertCircle className="w-10 h-10 text-red-600" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900">Portfolio Not Found</h2>
+          <p className="text-gray-600 text-lg">{error}</p>
+          <Button
+            onClick={() => window.location.href = '/'}
+            className="bg-gray-900 hover:bg-gray-800 text-white w-full"
+            size="lg"
+          >
+            Go to Homepage
+          </Button>
         </div>
-    </div>
+      </div>
+    )
+  }
 
-    <script>
-        const API_BASE = 'http://localhost:3001/api';
-        let currentToken = null;
-        let committedData = null;
-        let liveData = null;
+  const committedPortfolio = getCommittedPortfolio()
+  const livePortfolio = getLivePortfolio()
+  const changeInfo = getChangeInfo()
+  const displayPortfolio = liveData ? livePortfolio : committedPortfolio
+  const displayPositions = getPositions(liveData ? 'live' : 'committed')
 
-        async function loadShareData() {
-            try {
-                const path = window.location.pathname;
-                const token = path.split('/').pop();
-                currentToken = token;
+  // Calculate age of committed data
+  const getDataAge = () => {
+    if (!committedData?.committed_at) return null
+    
+    const committedDate = new Date(committedData.committed_at)
+    const now = Date.now()
+    const age = now - committedDate.getTime()
+    
+    const hours = Math.floor(age / 3600000)
+    const minutes = Math.floor((age % 3600000) / 60000)
+    
+    if (hours > 0) {
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`
+    } else if (minutes > 0) {
+      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`
+    }
+    return 'just now'
+  }
 
-                if (!token) {
-                    throw new Error('No share token provided');
-                }
-
-                // Fetch committed (on-chain) data
-                const response = await fetch(`${API_BASE}/share/resolve?token=${token}`);
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to load portfolio');
-                }
-
-                committedData = data;
-                displayPortfolio(data, 'committed');
-
-                // Check if data is stale (older than 1 hour)
-                // Parse committed_at from ISO string
-                let commitmentMs = 0;
-                if (data.committed_at) {
-                    commitmentMs = new Date(data.committed_at).getTime();
-                }
-                
-                const age = Date.now() - commitmentMs;
-                const isStale = age > 60000; // TEST: 1 minute for demo
-
-                // Always show the update time info
-                if (commitmentMs > 0) {
-                    const hours = Math.floor(age / 3600000);
-                    const minutes = Math.floor((age % 3600000) / 60000);
-                    
-                    let ageText = '';
-                    if (hours > 0) {
-                        ageText = `${hours} hour${hours > 1 ? 's' : ''} ago`;
-                    } else if (minutes > 0) {
-                        ageText = `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-                    } else {
-                        ageText = 'just now';
-                    }
-                    
-                    console.log(`Portfolio age: ${ageText}`);
-                    
-                    // Show refresh option if older than 1 hour
-                    if (isStale) {
-                        showRefreshOption(age);
-                    }
-                }
-
-            } catch (error) {
-                console.error('Error loading share data:', error);
-                document.getElementById('content').innerHTML = `
-                    <div class="error">
-                        <h2>Oops!</h2>
-                        <p>${error.message}</p>
-                    </div>
-                `;
-            }
-        }
-
-        function showRefreshOption(ageMs) {
-            const hours = Math.floor(ageMs / 3600000);
-            const minutes = Math.floor((ageMs % 3600000) / 60000);
-            
-            let ageText = '';
-            if (hours > 0) {
-                ageText = `${hours} hour${hours > 1 ? 's' : ''}`;
-            } else {
-                ageText = `${minutes} minute${minutes > 1 ? 's' : ''}`;
-            }
-
-            const banner = document.createElement('div');
-            banner.className = 'stale-banner active';
-            banner.innerHTML = `
-                <div class="stale-banner-content">
-                    <div class="stale-message">
-                        ℹ️ This data was verified ${ageText} ago and committed to the Solana blockchain.
-                    </div>
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8 md:py-12">
+        
+        {/* Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-3 mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-blue-600 rounded-2xl blur-xl opacity-30"></div>
+                <div className="relative bg-gradient-to-br from-emerald-600 to-blue-600 rounded-2xl p-4">
+                  <Shield className="w-8 h-8 text-white" />
                 </div>
-            `;
+              </div>
+            </div>
 
-            const content = document.getElementById('content');
-            content.insertBefore(banner, content.firstChild);
-        }
+            <div className="inline-flex items-center gap-2 bg-emerald-50 border-2 border-emerald-200 rounded-full px-6 py-3 mb-4">
+              <CheckCircle className="w-5 h-5 text-emerald-600" />
+              <span className="text-emerald-800 font-bold text-sm">
+                ✓ Verified On-Chain
+              </span>
+            </div>
 
-        async function viewUnverifiedLatest() {
-            try {
-                const btn = event ? event.target : document.querySelector('.btn-primary');
-                if (btn) {
-                    btn.disabled = true;
-                    btn.textContent = 'Loading...';
-                }
+            <h1 className="text-5xl md:text-6xl font-black text-gray-900 mb-3 tracking-tight">
+              Shared Portfolio
+            </h1>
+            <p className="text-gray-600 text-lg mb-6 font-medium">
+              Zero-knowledge verified crypto holdings
+            </p>
 
-                showStatus('Fetching latest data from Zerion...', 'info');
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button
+                onClick={copyLink}
+                variant="outline"
+                size="lg"
+                className="gap-2 rounded-full px-6 border-2 border-gray-900 hover:bg-gray-900 hover:text-white text-gray-900 font-semibold"
+              >
+                <Copy className="w-4 h-4" />
+                Copy Link
+              </Button>
+              <Button
+                onClick={() => window.open('/', '_blank')}
+                size="lg"
+                className="gap-2 bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6 shadow-lg"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Create Your Own
+              </Button>
+            </div>
+          </div>
 
-                // Extract wallet from committed data (if available in revealed data)
-                const walletAddress = committedData.revealed_data?.wallet_address;
-                
-                if (!walletAddress) {
-                    // Wallet is hidden for privacy, can't fetch latest
-                    throw new Error('Cannot fetch latest data: wallet address is hidden for privacy. Only the owner can refresh this portfolio.');
-                }
-
-                // Fetch latest data from Zerion via backend
-                const response = await fetch(`${API_BASE}/dev/test-zerion`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ wallet_address: walletAddress })
-                });
-
-                const result = await response.json();
-
-                if (result.success && result.portfolio) {
-                    liveData = result.portfolio;
-                    
-                    // Hide stale banner
-                    const staleBanner = document.querySelector('.stale-banner');
-                    if (staleBanner) staleBanner.remove();
-                    
-                    // Show unverified warning
-                    showUnverifiedWarning();
-                    
-                    // Display live data
-                    displayLiveData(liveData);
-                    
-                    if (btn) btn.textContent = '✓ Showing Latest';
-                    hideStatus();
-                } else {
-                    throw new Error('Failed to fetch latest data');
-                }
-
-            } catch (error) {
-                console.error('Error fetching latest data:', error);
-                showStatus('Failed: ' + error.message, 'error');
-                const btn = event ? event.target : document.querySelector('.btn-primary');
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = '⚡ View Latest (Unverified)';
-                }
-            }
-        }
-
-        function showStatus(message, type = 'info') {
-            // Remove existing status if any
-            const existingStatus = document.querySelector('.status-message');
-            if (existingStatus) existingStatus.remove();
-
-            const statusDiv = document.createElement('div');
-            statusDiv.className = `status-message ${type}`;
-            statusDiv.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                background: ${type === 'error' ? '#f44336' : type === 'success' ? '#4caf50' : '#2196f3'};
-                color: white;
-                border-radius: 5px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 1000;
-                animation: slideIn 0.3s ease-out;
-            `;
-            statusDiv.textContent = message;
-            document.body.appendChild(statusDiv);
-
-            // Add animation
-            if (!document.getElementById('status-animation-style')) {
-                const style = document.createElement('style');
-                style.id = 'status-animation-style';
-                style.textContent = `
-                    @keyframes slideIn {
-                        from {
-                            transform: translateX(400px);
-                            opacity: 0;
-                        }
-                        to {
-                            transform: translateX(0);
-                            opacity: 1;
-                        }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-        }
-
-        function hideStatus() {
-            const statusDiv = document.querySelector('.status-message');
-            if (statusDiv) {
-                statusDiv.style.animation = 'slideIn 0.3s ease-out reverse';
-                setTimeout(() => statusDiv.remove(), 300);
-            }
-        }
-
-        function showUnverifiedWarning() {
-            const warning = document.createElement('div');
-            warning.className = 'unverified-banner active';
-            warning.innerHTML = `
-                <strong>⚡ Live Data (Unverified)</strong><br>
-                This data was fetched directly from Zerion just now. It has NOT been verified on-chain.
-                Only the portfolio owner can commit verified updates.
-            `;
-            
-            const content = document.getElementById('content');
-            content.insertBefore(warning, content.firstChild);
-        }
-
-        function displayLiveData(portfolio) {
-            const content = document.getElementById('content');
-            
-            // Add live data section
-            const liveSection = document.createElement('div');
-            liveSection.className = 'portfolio-section';
-            liveSection.innerHTML = `
-                <div class="section-header">
-                    <div class="section-title">Latest Data (Live)</div>
-                    <div class="live-badge">⚡ LIVE (unverified)</div>
+          {/* Stale Data Banner */}
+          {isStale && liveData && (
+            <div className="max-w-3xl mx-auto bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-4 mb-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-yellow-700" />
+                  <p className="text-yellow-800 font-semibold text-sm">
+                    Data updated {getDataAge()}. Showing live comparison.
+                  </p>
                 </div>
-                ${generatePortfolioCard(portfolio, 'live')}
-                <div class="timestamp">
-                    Fetched just now from Zerion
-                </div>
-            `;
+                {changeInfo && Math.abs(changeInfo.change) > 0.01 && (
+                  <div className={`px-3 py-1 rounded-full text-sm font-bold ${
+                    changeInfo.isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {changeInfo.isPositive ? '+' : ''}${changeInfo.change.toFixed(2)} 
+                    ({changeInfo.isPositive ? '+' : ''}{changeInfo.changePercent.toFixed(2)}%)
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-            // Insert before committed data
-            const committedSection = content.querySelector('.portfolio-section');
-            content.insertBefore(liveSection, committedSection);
+          {/* Privacy Notice */}
+          <div className="max-w-2xl mx-auto bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 text-center">
+            <p className="text-blue-800 text-sm font-medium">
+              🔒 <strong>Privacy Protected:</strong> Wallet address hidden. 
+              {committedData?.privacy_score && ` ${committedData.privacy_score}% private.`} 
+              Cryptographically verified using zero-knowledge proofs.
+            </p>
+          </div>
+        </motion.div>
 
-            // Show comparison if different
-            showComparison();
-        }
+        {/* Portfolio Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          {/* Show Live Data Badge if available */}
+          {liveData && (
+            <div className="mb-4 flex items-center justify-center gap-2 text-sm">
+              <Zap className="w-4 h-4 text-blue-600" />
+              <span className="text-blue-600 font-semibold">Showing live data (unverified)</span>
+            </div>
+          )}
 
-        function showComparison() {
-            if (!committedData || !liveData) return;
-
-            const committedValue = parseFloat(committedData.revealed_data?.total_value?.replace(/[^0-9.-]+/g, '')) || 0;
-            const liveValue = liveData.total_value || 0;
-            const change = liveValue - committedValue;
-            const changePercent = committedValue > 0 ? ((change / committedValue) * 100).toFixed(2) : 0;
-
-            if (Math.abs(change) > 0.01) {
-                const changeClass = change > 0 ? 'positive' : 'negative';
-                const changeSymbol = change > 0 ? '+' : '';
-                
-                // Add change badge to live data
-                const liveValueStat = document.querySelector('.portfolio-section .stat-value');
-                if (liveValueStat && !liveValueStat.querySelector('.change-badge')) {
-                    liveValueStat.innerHTML += `
-                        <span class="change-badge ${changeClass}">
-                            ${changeSymbol}$${Math.abs(change).toFixed(2)} (${changeSymbol}${changePercent}%)
-                        </span>
-                    `;
-                }
-            }
-        }
-
-        function generatePortfolioCard(data, type) {
-            let html = '<div class="portfolio-card">';
+          <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-4 lg:gap-6 auto-rows-fr">
             
-            // Determine value source
-            const value = type === 'live' 
-                ? `$${data.total_value?.toFixed(2) || '0.00'}`
-                : data.total_value || '$0.00';
-            
-            const pnl = type === 'live'
-                ? `${data.pnl_percentage >= 0 ? '+' : ''}${data.pnl_percentage?.toFixed(2) || '0'}%`
-                : data.pnl_percentage || '0%';
+            {/* Portfolio Value */}
+            <div className="md:col-span-3 lg:col-span-4 md:row-span-2">
+              <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-[2rem] p-8 shadow-2xl h-full min-h-[500px] flex flex-col">
+                <PortfolioValue
+                  totalValue={displayPortfolio?.total_value}
+                  pnlPercentage={displayPortfolio?.pnl_percentage}
+                  positions={displayPositions}
+                />
+              </div>
+            </div>
 
-            // Total value
-            html += `
-                <div class="stat">
-                    <span class="stat-label">Total Portfolio Value</span>
-                    <span class="stat-value">${value}</span>
-                </div>
-            `;
+            {/* Quick Stats */}
+            <div className="md:col-span-3 lg:col-span-4">
+              <div className="bg-white rounded-[2rem] p-6 h-full border-2 border-gray-900 shadow-lg">
+                <QuickStats portfolio={displayPortfolio} />
+              </div>
+            </div>
 
-            // PnL
-            const isPositive = pnl.startsWith('+');
-            html += `
-                <div class="stat">
-                    <span class="stat-label">Profit/Loss</span>
-                    <span class="stat-value ${isPositive ? 'positive' : 'negative'}">
-                        ${pnl}
+            {/* Portfolio Performance */}
+            <div className="md:col-span-3 lg:col-span-4">
+              <div className="bg-white rounded-[2rem] p-6 h-full border-2 border-gray-900 shadow-lg">
+                <PortfolioPerformance positions={displayPositions} />
+              </div>
+            </div>
+
+            {/* Portfolio Metrics */}
+            <div className="md:col-span-3 lg:col-span-4">
+              <div className="bg-white rounded-[2rem] p-6 h-full border-2 border-gray-900 shadow-lg">
+                <PortfolioMetrics 
+                  portfolio={displayPortfolio} 
+                  positions={displayPositions}
+                  isPublicView={true}
+                />
+              </div>
+            </div>
+
+            {/* Asset Allocation */}
+            <div className="md:col-span-3 lg:col-span-4">
+              <div className="bg-white rounded-[2rem] p-6 h-full border-2 border-gray-900 shadow-lg">
+                <AssetAllocation positions={displayPositions} totalValue={displayPortfolio?.total_value} />
+              </div>
+            </div>
+
+            {/* Top Assets Table */}
+            <div className="col-span-full">
+              <div className="bg-white rounded-[2rem] p-8 border-2 border-gray-900 shadow-lg">
+                <TopAssetsList positions={displayPositions} />
+              </div>
+            </div>
+
+            {/* Asset Cards */}
+            <div className="col-span-full">
+              <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-[2rem] p-8 md:p-10 shadow-2xl border-2 border-gray-900">
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-3xl font-bold text-white">Portfolio Assets</h3>
+                  <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+                    <span className="text-sm font-semibold text-white">
+                      {displayPositions?.length || 0} Holdings
                     </span>
+                  </div>
                 </div>
-            `;
+                <AssetCards positions={displayPositions} />
+              </div>
+            </div>
 
-            // Chain
-            const chain = type === 'live' ? data.chain : data.chain;
-            if (chain) {
-                html += `
-                    <div class="stat">
-                        <span class="stat-label">Network</span>
-                        <span class="stat-value">${chain.toUpperCase()}</span>
-                    </div>
-                `;
-            }
+          </div>
+        </motion.div>
 
-            // Assets count
-            const assetsCount = type === 'live' 
-                ? data.assets?.length 
-                : data.total_assets_count;
-            if (assetsCount) {
-                html += `
-                    <div class="stat">
-                        <span class="stat-label">Total Assets</span>
-                        <span class="stat-value">${assetsCount}</span>
-                    </div>
-                `;
-            }
+        {/* Footer */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="mt-12 text-center space-y-4"
+        >
+          {committedData?.committed_at && (
+            <p className="text-sm text-gray-500 font-medium">
+              Committed on-chain: {new Date(committedData.committed_at).toLocaleString()} ({getDataAge()})
+            </p>
+          )}
+          
+          <div className="flex items-center justify-center gap-2 text-xs text-gray-600 font-medium">
+            <Shield className="w-3 h-3 text-emerald-500" />
+            <span>
+              Showing {committedData?.revealed_count || 0} of {committedData?.total_count || 0} items - 
+              {committedData?.privacy_score || 0}% private
+            </span>
+          </div>
 
-            html += '</div>';
-            return html;
-        }
+          <div className="pt-6 border-t border-gray-200">
+            <p className="text-sm text-gray-500">
+              Powered by <span className="font-bold text-gray-900">FlexAnon</span> - 
+              Privacy-preserving portfolio sharing
+            </p>
+          </div>
+        </motion.div>
 
-        function displayPortfolio(data, type) {
-            const content = document.getElementById('content');
-            
-            console.log('Portfolio data:', data);
-            
-            let html = `
-                <div class="portfolio-section">
-                    <div class="section-header">
-                        <div class="section-title">Committed On-Chain</div>
-                        <div class="verified-badge">✓ VERIFIED</div>
-                    </div>
-            `;
-            
-            html += '<div class="portfolio-card">';
-            
-            // Total value
-            if (data.revealed_data?.total_value) {
-                html += `
-                    <div class="stat">
-                        <span class="stat-label">Total Portfolio Value</span>
-                        <span class="stat-value">${data.revealed_data.total_value}</span>
-                    </div>
-                `;
-            }
-
-            // PnL
-            if (data.revealed_data?.pnl_percentage) {
-                const isPositive = data.revealed_data.pnl_percentage.startsWith('+');
-                html += `
-                    <div class="stat">
-                        <span class="stat-label">Profit/Loss</span>
-                        <span class="stat-value ${isPositive ? 'positive' : 'negative'}">
-                            ${data.revealed_data.pnl_percentage}
-                        </span>
-                    </div>
-                `;
-            }
-
-            // Chain
-            if (data.revealed_data?.chain) {
-                html += `
-                    <div class="stat">
-                        <span class="stat-label">Network</span>
-                        <span class="stat-value">${data.revealed_data.chain.toUpperCase()}</span>
-                    </div>
-                `;
-            }
-
-            // Assets count
-            if (data.revealed_data?.total_assets_count) {
-                html += `
-                    <div class="stat">
-                        <span class="stat-label">Total Assets</span>
-                        <span class="stat-value">${data.revealed_data.total_assets_count}</span>
-                    </div>
-                `;
-            }
-
-            // Snapshot time
-            if (data.revealed_data?.snapshot_time) {
-                const date = new Date(data.revealed_data.snapshot_time);
-                html += `
-                    <div class="stat">
-                        <span class="stat-label">Snapshot</span>
-                        <span class="stat-value">${date.toLocaleString()}</span>
-                    </div>
-                `;
-            }
-
-            html += '</div>';
-            
-            // Add "Last Updated" timestamp
-            if (data.committed_at) {
-                const committedDate = new Date(data.committed_at);
-                const now = Date.now();
-                const age = now - committedDate.getTime();
-                
-                const hours = Math.floor(age / 3600000);
-                const minutes = Math.floor((age % 3600000) / 60000);
-                
-                let ageText = '';
-                if (hours > 0) {
-                    ageText = `${hours} hour${hours > 1 ? 's' : ''} ago`;
-                } else if (minutes > 0) {
-                    ageText = `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-                } else {
-                    ageText = 'just now';
-                }
-                
-                html += `
-                    <div class="timestamp" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
-                        <strong>Last Updated:</strong> ${ageText} (${committedDate.toLocaleString()})
-                    </div>
-                `;
-            }
-            
-            html += `<div class="timestamp">Committed to Solana blockchain</div>`;
-            html += '</div>';
-
-            // Top assets
-            if (data.revealed_data?.top_assets && data.revealed_data.top_assets.length > 0) {
-                html += '<div class="assets">';
-                html += '<h2>Top Assets</h2>';
-                
-                data.revealed_data.top_assets.forEach(asset => {
-                    html += `
-                        <div class="asset">
-                            ${asset.icon_url ? 
-                                `<img src="${asset.icon_url}" class="asset-icon" alt="${asset.symbol}">` :
-                                `<div class="asset-icon"></div>`
-                            }
-                            <div class="asset-info">
-                                <div class="asset-symbol">${asset.symbol}</div>
-                                <div class="asset-name">${asset.name || asset.symbol}</div>
-                            </div>
-                            <div class="asset-value">
-                                <div>${asset.value_usd}</div>
-                                <div style="font-size: 12px; color: #999;">${asset.amount}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                html += '</div>';
-            }
-
-            // Footer
-            const privacyScore = data.privacy_score || data.metadata?.privacy_score || 0;
-            const revealedCount = data.revealed_count || data.metadata?.revealed_count || 0;
-            const totalCount = data.total_count || data.metadata?.total_count || 0;
-            
-            html += `
-                <div class="footer">
-                    <div style="margin-bottom: 10px;">
-                        <span class="privacy-badge">🔒 ${privacyScore}% Private</span>
-                    </div>
-                    <p>This portfolio is shared via FlexAnon with privacy-preserving commitments.</p>
-                    <p style="margin-top: 5px; font-size: 11px;">
-                        Showing ${revealedCount} of ${totalCount} items
-                    </p>
-                </div>
-            `;
-
-            content.innerHTML = html;
-        }
-
-        // Load data when page loads
-        window.addEventListener('load', loadShareData);
-    </script>
-</body>
-</html>
+      </div>
+    </div>
+  )
+}

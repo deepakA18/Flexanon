@@ -12,11 +12,10 @@ export default function ConnectWalletButton() {
 
   useEffect(() => {
     if (connected && publicKey) {
-      // Convert the wallet address to string
       const walletAddress = publicKey.toBase58();
-
-      // Navigate to /profile/[walletAddress]
       router.push(`/profile/${walletAddress}`);
+    } else if (!connected) {
+      router.push(`/`);
     }
   }, [connected, publicKey, router]);
 
@@ -26,7 +25,7 @@ export default function ConnectWalletButton() {
       whileTap={{ scale: 0.98 }}
       className="inline-block"
     >
-      <WalletMultiButton className="!bg-indigo-600 !rounded-4xl !text-white !font-semibold hover:!bg-indigo-700 transition-all px-4 py-2" />
+      <WalletMultiButton className="!text-white transition-all px-4 py-2" />
     </motion.div>
   );
 }

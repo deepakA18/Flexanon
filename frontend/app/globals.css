@@ -165,3 +165,217 @@
 button.wallet-adapter-button.wallet-adapter-button-trigger {
   border-radius: 20px;
 }
+
+/* Portfolio Card Base */
+/* Portfolio Card Base - Glassmorphism */
+/* Portfolio Card Base - Frosted White Glass */
+/* Portfolio Card Base - Blue Glass */
+.portfolio-card {
+  @apply relative mx-auto rounded-3xl p-8 text-white;
+  width: 95%;              /* almost full width */
+  max-width: 1200px;       /* limit for large screens */
+  height: 700px;           /* tall card */
+  background: white;
+  backdrop-filter: blur(19px);
+  -webkit-backdrop-filter: blur(19px);
+  
+  border-radius: 0px;
+
+   /* faint border for glass edges */
+}
+.glass-card {
+  
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(19px);
+  -webkit-backdrop-filter: blur(19px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 8px 4px rgba(255, 255, 255, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+/* .portfolio-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+}
+
+.portfolio-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.8),
+    transparent,
+    rgba(255, 255, 255, 0.3)
+  );
+} */
+
+/* Remove bevel entirely */
+.portfolio-bevel {
+  display: none;
+}
+
+/* Soft inner ambient glow for depth (optional) */
+.portfolio-inner-shadow {
+  @apply absolute inset-0 pointer-events-none rounded-3xl;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.15), transparent 70%);
+  filter: blur(28px);
+  opacity: 0.6;
+}
+
+
+
+
+
+
+
+.wallet-adapter-modal-wrapper {
+  @apply relative max-w-xl mx-auto rounded-2xl p-6 overflow-hidden text-neutral-200;
+  
+  /* Match portfolio-card gradient background */
+  background: linear-gradient(to bottom right, #0a0a0a, #111);
+
+  /* Same border & shadow as portfolio-card */
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow:
+    inset 2px 2px 10px rgba(255, 255, 255, 0.4),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.7),
+    0 0 18px rgba(0, 0, 0, 0.8);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 400px;
+  font-family: 'DM Sans', Roboto, Helvetica Neue, Helvetica, Arial, sans-serif;
+  position: relative;
+  z-index: 1050;
+}
+
+/* Bevel overlay to match portfolio-card */
+.wallet-adapter-modal-wrapper::before {
+  content: '';
+  @apply absolute inset-0 rounded-2xl pointer-events-none;
+
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 20%,
+    rgba(0, 0, 0, 0.5) 95%,
+    rgba(0, 0, 0, 0.9) 100%
+  );
+  mix-blend-mode: soft-light;
+  opacity: 1;
+}
+/* Wrapper for the modal */
+.wallet-adapter-modal-wrapper {
+  @apply relative flex flex-col items-center z-50 max-w-md mx-auto rounded-2xl overflow-hidden;
+  background: linear-gradient(to bottom right, #0a0a0a, #111);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow:
+    inset 2px 2px 10px rgba(255, 255, 255, 0.4),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.7),
+    0 0 18px rgba(0, 0, 0, 0.8);
+  font-family: 'DM Sans', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Bevel overlay */
+.wallet-adapter-modal-wrapper::before {
+  content: '';
+  @apply absolute inset-0 pointer-events-none rounded-2xl;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 20%,
+    rgba(0, 0, 0, 0.5) 95%,
+    rgba(0, 0, 0, 0.9) 100%
+  );
+  mix-blend-mode: soft-light;
+}
+
+/* Top macOS-style bar */
+.wallet-adapter-modal-topbar {
+  @apply flex items-center justify-between h-8 px-4 border-b border-neutral-800;
+}
+.wallet-adapter-modal-topbar .circle {
+  @apply h-3 w-3 rounded-full border border-neutral-500;
+}
+.wallet-adapter-modal-topbar .title {
+  @apply text-sm font-mono text-neutral-400 uppercase tracking-widest absolute left-1/2 -translate-x-1/2;
+}
+
+/* Wallet buttons inside modal */
+.wallet-adapter-button {
+  @apply w-full flex items-center justify-center gap-2 rounded-xl h-12 text-sm font-semibold text-neutral-200 bg-gradient-to-br from-[#0a0a0a] to-[#111] border border-white/5 shadow-inner;
+  transition: all 0.2s;
+}
+.wallet-adapter-button:hover:not([disabled]) {
+  @apply bg-neutral-900;
+}
+.wallet-adapter-button[disabled] {
+  @apply bg-neutral-800 text-neutral-500 cursor-not-allowed;
+}
+
+/* Dropdown items */
+.wallet-adapter-dropdown-list,
+.wallet-adapter-modal-list {
+  @apply grid gap-2 p-2 w-full rounded-xl;
+  background: linear-gradient(to bottom right, #0a0a0a, #111);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow:
+    inset 2px 2px 10px rgba(255, 255, 255, 0.1),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.7),
+    0 0 12px rgba(0,0,0,0.5);
+  font-family: 'DM Sans', Roboto, Helvetica, Arial, sans-serif;
+}
+.wallet-adapter-dropdown-list-item,
+.wallet-adapter-modal-list-item {
+  @apply px-4 py-2 rounded-lg text-neutral-200 cursor-pointer font-mono text-sm;
+  transition: all 0.2s;
+}
+.wallet-adapter-dropdown-list-item:hover,
+.wallet-adapter-modal-list-item:hover {
+  @apply bg-white/5;
+}
+
+/* Close button */
+.wallet-adapter-modal-button-close {
+  @apply absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gradient-to-br from-[#0a0a0a] to-[#111] border border-white/5 shadow-inner cursor-pointer;
+}
+.wallet-adapter-modal-button-close:hover svg {
+  @apply fill-white;
+}
+
+/* Overlay */
+.wallet-adapter-modal-overlay {
+  @apply fixed inset-0 bg-black/50 backdrop-blur-sm;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .wallet-adapter-modal-wrapper {
+    max-width: 90%;
+    margin: 1rem;
+  }
+  .wallet-adapter-modal-title {
+    font-size: 18px;
+  }
+}

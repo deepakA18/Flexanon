@@ -1,24 +1,24 @@
-"use client"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { CheckCircle2, Copy } from "lucide-react"
-import { motion } from "framer-motion"
+import React from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { CheckCircle2, Copy, RefreshCw, Loader2 } from 'lucide-react'
+import { motion } from 'framer-motion'
 
-interface ShareLinkProps {
-  link: string
-  onCopy?: () => void
+interface ShareLinkDisplayProps {
+  shareUrl: string
+  copied: boolean
+  refreshing: boolean
+  onCopy: () => void
+  onRefresh: () => Promise<void>
 }
 
-export default function ShareLink({ link, onCopy }: ShareLinkProps) {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(link)
-    setCopied(true)
-    onCopy?.()
-    setTimeout(() => setCopied(false), 2000)
-  }
-
+export const ShareLinkDisplay: React.FC<ShareLinkDisplayProps> = ({
+  shareUrl,
+  copied,
+  refreshing,
+  onCopy,
+  onRefresh
+}) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -34,22 +34,41 @@ export default function ShareLink({ link, onCopy }: ShareLinkProps) {
           Your private portfolio link has been generated. Share it securely with others.
         </p>
         <div className="flex gap-2">
-          <input
+          <Input
             type="text"
-            value={link}
+            value={shareUrl}
             readOnly
-            className="flex-1 px-3 py-2 text-sm bg-white border border-green-200 rounded-md font-mono text-green-900 truncate"
+            className="flex-1 px-3 py-2 text-xs rounded-md font-mono text-green-900 truncate"
           />
           <Button
-            onClick={handleCopy}
+            onClick={onCopy}
             size="sm"
             variant="outline"
-            className="border-green-200 hover:bg-green-100 bg-transparent"
+            className="border-green-200 hover:bg-green-100 bg-white"
           >
             <Copy className="w-4 h-4" />
-            {copied ? "Copied!" : "Copy"}
+            {copied ? 'Copied!' : 'Copy'}
           </Button>
         </div>
+        <Button
+          onClick={onRefresh}
+          disabled={refreshing}
+          size="sm"
+          variant="outline"
+          className="w-full border-green-200 hover:bg-green-100 bg-white"
+        >
+          {refreshing ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Refreshing...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Portfolio
+            </>
+          )}
+        </Button>
       </div>
     </motion.div>
   )
