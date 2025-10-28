@@ -174,73 +174,89 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
     }
   }
 
-  const handleGenerateShareLink = async () => {
-    if (!walletAddress || !signMessage) {
-      toast?.error?.('Wallet not ready')
+const handleGenerateShareLink = async () => {
+  if (!walletAddress || !signMessage) {
+    toast?.error?.('Wallet not ready')
+    return
+  }
+
+  setLoading(true)
+  setShareStatus('')
+
+  try {
+    setShareStatus('Fetching portfolio data...')
+    const current = await fetchPortfolio?.(apiBase, walletAddress)
+
+    // Get portfolio data safely
+    const portfolioData = Array.isArray(current?.assets) ? current.assets : []
+
+    if (portfolioData.length === 0) {
+      toast?.error?.('No assets found to share')
+      setLoading(false)
       return
     }
 
-    setLoading(true)
-    setShareStatus('')
+    setShareStatus('Building verification...')
+    const { root, signature, message, timestamp } = await buildAndSign(portfolioData)
 
-    try {
-      setShareStatus('Fetching portfolio data...')
-      const current = await fetchPortfolio?.(apiBase, walletAddress)
+    setShareStatus('Submitting commitment...')
+    const commitmentResult = await submitCommitment?.(apiBase, walletAddress, root, signature, message, timestamp)
 
-      // Get portfolio data safely
-      const portfolioData = Array.isArray(current?.assets) ? current.assets : []
-
-      if (portfolioData.length === 0) {
-        toast?.error?.('No assets found to share')
-        setLoading(false)
-        return
-      }
-
-      setShareStatus('Building verification...')
-      const { root, signature, message, timestamp } = await buildAndSign(portfolioData)
-
-      setShareStatus('Submitting commitment...')
-      const commitmentResult = await submitCommitment?.(apiBase, walletAddress, root, signature, message, timestamp)
-
-      if (!commitmentResult?.commitmentAddress) {
-        throw new Error('Failed to get commitment address')
-      }
-
-      const { commitmentAddress, commitmentVersion } = commitmentResult
-
-      setShareStatus('Signing ownership...')
-      const linkMsg = `FlexAnon Ownership Verification\n\nI am the owner of wallet: ${walletAddress}\nTimestamp: ${timestamp}`
-      const linkSigRaw = await signMessage(new TextEncoder().encode(linkMsg))
-
-      if (!linkSigRaw) {
-        throw new Error('Ownership signing failed')
-      }
-
-      const linkSig = base58Encode(linkSigRaw)
-      if (!linkSig) {
-        throw new Error('Failed to encode ownership signature')
-      }
-
-      setShareStatus('Generating share link...')
-      const url = await generateShareLink?.(apiBase, walletAddress, linkSig, linkMsg, timestamp, commitmentAddress, commitmentVersion)
-
-      if (!url) {
-        throw new Error('Failed to generate share URL')
-      }
-
-      await trackUpdate?.()
-      setShareUrl(url)
-      toast?.success?.('Share link generated successfully!')
-
-    } catch (e: any) {
-      console.error('handleGenerateShareLink error:', e)
-      const errorMessage = e?.message || 'Failed to generate share link'
-      toast?.error?.(errorMessage)
-    } finally {
-      setShareStatus('')
-      setLoading(false)
+    if (!commitmentResult?.commitmentAddress) {
+      throw new Error('Failed to get commitment address')
     }
+    console.log(commitmentResult);
+    const { commitmentAddress, commitmentVersion, transactionSignature } = commitmentResult
+
+    // Show transaction signature toast if available
+    
+
+    setShareStatus('Signing ownership...')
+    const linkMsg = `FlexAnon Ownership Verification\n\nI am the owner of wallet: ${walletAddress}\nTimestamp: ${timestamp}`
+    const linkSigRaw = await signMessage(new TextEncoder().encode(linkMsg))
+
+    if (!linkSigRaw) {
+      throw new Error('Ownership signing failed')
+    }
+
+    const linkSig = base58Encode(linkSigRaw)
+    if (!linkSig) {
+      throw new Error('Failed to encode ownership signature')
+    }
+
+    setShareStatus('Generating share link...')
+    const url = await generateShareLink?.(apiBase, walletAddress, linkSig, linkMsg, timestamp, commitmentAddress, commitmentVersion)
+
+    if (!url) {
+      throw new Error('Failed to generate share URL')
+    }
+
+    await trackUpdate?.()
+    setShareUrl(url)
+    if (transactionSignature) {
+      toast?.success?.(
+        `Commitment verified on-chain!`,
+        {
+          description: `Transaction: ${transactionSignature.slice(0, 8)}...${transactionSignature.slice(-8)}`,
+          action: {
+            label: 'View on Solscan',
+            onClick: () => window.open(`https://solscan.io/tx/${transactionSignature}?cluster=devnet`, '_blank')
+          },
+         
+        }
+      )
+    }
+
+
+  } catch (e: any) {
+    console.error('handleGenerateShareLink error:', e)
+    const errorMessage = e?.message || 'Failed to generate share link'
+    toast?.error?.(errorMessage)
+  } finally {
+    setShareStatus('')
+    setLoading(false)
   }
+}
 
   const handleRefresh = async () => {
     if (!walletAddress || !signMessage) {
@@ -249,13 +265,7 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
     }
 
     // Check subscription limits
-    if (subscription) {
-      const { updates_remaining } = subscription
-      if (updates_remaining ||0 <= 0) {
-        toast?.error?.('No updates remaining. Please upgrade your plan.')
-        return
-      }
-    }
+    
 
     try {
       setRefreshing(true)

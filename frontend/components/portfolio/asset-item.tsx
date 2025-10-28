@@ -17,7 +17,7 @@ export default function AssetItem({ asset, index }: AssetItemProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, type: 'spring', stiffness: 200, damping: 15 }}
-      className="relative flex items-center gap-3 p-3 rounded-xl border text-neutral-200 bg-white/10"
+      className="relative flex items-center gap-3 p-3 rounded-xl border  text-neutral-200 "
      
     >
      

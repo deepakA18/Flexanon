@@ -19,9 +19,9 @@ export default function QuickStats({ portfolio }: QuickStatsProps) {
   const isPositive = pnlPercentage >= 0
 
   return (
-    <Card>
+    <Card className='bg-white'>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-blue-500">
+        <CardTitle className="flex items-center gap-2 text-primary">
           <DollarSign className="w-4 h-4" />
           <span className="text-lg font-semibold">Quick Stats</span>
         </CardTitle>
@@ -30,11 +30,11 @@ export default function QuickStats({ portfolio }: QuickStatsProps) {
       <CardContent className="space-y-3">
         {/* Net Worth */}
         <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-          <div className="flex items-center gap-2 text-blue-600 mb-1">
+          <div className="flex items-center gap-2 text-primary mb-1">
             <DollarSign className="w-4 h-4" />
             <span className="text-xs font-semibold">Net Worth</span>
           </div>
-          <div className="text-xl font-bold text-blue-900">
+          <div className="text-xl font-bold text-primary">
             ${totalValue.toFixed(2)}
           </div>
         </div>
@@ -45,23 +45,23 @@ export default function QuickStats({ portfolio }: QuickStatsProps) {
             ? 'bg-green-50 border-green-100' 
             : 'bg-red-50 border-red-100'}`}>
           <div className={`flex items-center gap-2 mb-1
-            ${isPositive ? 'text-blue-600' : 'text-red-600'}`}>
+            ${isPositive ? 'text-primary' : 'text-red-600'}`}>
             <TrendingUp className="w-4 h-4" />
             <span className="text-xs font-semibold">All-Time PnL</span>
           </div>
           <div className={`text-xl font-bold
-            ${isPositive ? 'text-blue-900' : 'text-red-900'}`}>
+            ${isPositive ? 'text-primary' : 'text-red-900'}`}>
             {isPositive ? '+' : ''}{(pnlPercentage * 100).toFixed(2)}%
           </div>
         </div>
 
         {/* Holdings */}
         <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="flex items-center gap-2 text-blue-600 mb-1">
+          <div className="flex items-center gap-2 text-primary mb-1">
             <Wallet className="w-4 h-4" />
             <span className="text-xs font-semibold">Holdings</span>
           </div>
-          <div className="text-xl font-bold text-blue-900">
+          <div className="text-xl font-bold text-primary">
             {assetsCount} {assetsCount === 1 ? 'asset' : 'assets'}
           </div>
         </div>

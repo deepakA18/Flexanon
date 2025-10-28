@@ -45,19 +45,19 @@ export default function PortfolioCard({
       <div className="max-w-[1600px] mx-auto space-y-4">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <div>
+        <div className="flex flex-col pt-10 sm:flex-row items-start sm:items-center justify-end gap-4 mb-6">
+          {/* <div>
             <h1 className="text-2xl md:text-3xl font-bold text-primary mb-1">Portfolio Dashboard</h1>
             <p className="text-xs md:text-sm text-primary">Track and manage your crypto assets</p>
-          </div>
+          </div> */}
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-5">
             <Button
               onClick={onRefresh}
               disabled={refreshing}
               variant="outline"
-              size="sm"
-              className="bg-white hover:bg-gray-50 border-gray-200 transition-all duration-300 disabled:opacity-50"
+              size="lg"
+              className="bg-white cursor-pointer font-bold hover:bg-gray-50 gap-2 border-gray-200 transition-all duration-300 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
               {refreshing ? 'Refreshing...' : 'Refresh'}
@@ -67,8 +67,8 @@ export default function PortfolioCard({
               variant="default"
               onClick={onShare}
               disabled={loading}
-              size="sm"
-              className="gap-2 text-white bg-blue-600 hover:bg-blue-700 font-semibold transition-all duration-300 disabled:opacity-50"
+              size="lg"
+              className="gap-2 text-white cursor-pointer font-bold bg-blue-600 hover:bg-blue-700  transition-all duration-300 disabled:opacity-50"
             >
               <Share2 className="w-4 h-4" />
               Share
@@ -108,9 +108,9 @@ export default function PortfolioCard({
 
             {/* Asset Cards Grid */}
             <div onClick={() => setExpandedCard('asset-cards')} className={cardHoverClass}>
-              <Card>
+              <Card className="bg-white">
                 <CardContent className="p-4">
-                  <h3 className="text-base font-bold mb-3 flex items-center gap-2">
+                  <h3 className="text-base font-bold mb-3 flex items-center gap-2 text-primary">
                     <span className="w-1 h-5 bg-primary rounded"></span>
                     Your Assets
                   </h3>
@@ -147,10 +147,10 @@ export default function PortfolioCard({
 
         {/* Footer */}
         {portfolio?.snapshot_timestamp && (
-          <Card className="bg-white/50 backdrop-blur-sm border-gray-200 mt-4">
-            <CardContent className="p-3">
+          
+           
               <div className="text-center">
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 mt-20">
                   Last updated: {new Date(portfolio.snapshot_timestamp).toLocaleString(undefined, {
                     hour12: true,
                     month: 'short',
@@ -161,8 +161,7 @@ export default function PortfolioCard({
                   })}
                 </p>
               </div>
-            </CardContent>
-          </Card>
+          
         )}
 
       </div>
@@ -196,19 +195,6 @@ export default function PortfolioCard({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={expandedCard === 'asset-cards'} onOpenChange={() => setExpandedCard(null)}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto border-none [&>button]:hidden">
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <span className="w-1 h-5 bg-blue-600 rounded"></span>
-                Your Assets
-              </h3>
-              <AssetCards positions={positions} />
-            </CardContent>
-          </Card>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={expandedCard === 'quick-stats'} onOpenChange={() => setExpandedCard(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh]  border-none overflow-auto [&>button]:hidden">

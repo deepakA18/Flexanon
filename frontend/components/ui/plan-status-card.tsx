@@ -40,7 +40,7 @@ export default function PlanStatusCard({ data }: { data: PlanData }) {
                         whileTap={{ scale: 0.98 }}
                         className="cursor-pointer"
                     >
-                        <div className="bg-white border-2 border-gray-200 px-4 py-3 rounded-xl flex items-center gap-3 hover:border-blue-400 hover:shadow-lg transition-all duration-300">
+                        <div className="bg-white  p-2 shadow-xs rounded-xl flex items-center gap-3 hover:border-blue-400 hover:shadow-lg transition-all duration-300">
                             <Badge
                                 variant="secondary"
                                 className="bg-gradient-to-r from-blue-600 to-blue-700 text-white border-none font-semibold capitalize px-3 py-1 shadow-sm hover:from-blue-700 hover:to-blue-800 transition-all duration-300"

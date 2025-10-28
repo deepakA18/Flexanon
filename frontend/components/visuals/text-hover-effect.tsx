@@ -1,133 +1,145 @@
-"use client";
-import React, { useRef, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+"use client"
 
-export const TextHoverEffect = ({
-    text,
-    duration,
-}: {
-    text: string;
-    duration?: number;
-    automatic?: boolean;
-}) => {
-    const svgRef = useRef<SVGSVGElement>(null);
-    const [cursor, setCursor] = useState({ x: 0, y: 0 });
-    const [hovered, setHovered] = useState(false);
-    const [maskPosition, setMaskPosition] = useState({ cx: "50%", cy: "50%" });
+import React, { CSSProperties, forwardRef, useRef } from "react"
+import { motion, useAnimationFrame, useMotionValue, useTransform } from "motion/react"
+import { useMousePositionRef } from "@/hooks/use-mouse-position-ref"
 
-    useEffect(() => {
-        if (svgRef.current && cursor.x !== null && cursor.y !== null) {
-            const svgRect = svgRef.current.getBoundingClientRect();
-            const cxPercentage = ((cursor.x - svgRect.left) / svgRect.width) * 100;
-            const cyPercentage = ((cursor.y - svgRect.top) / svgRect.height) * 100;
-            setMaskPosition({
-                cx: `${cxPercentage}%`,
-                cy: `${cyPercentage}%`,
-            });
-        }
-    }, [cursor]);
+// Helper type that makes all properties of CSSProperties accept number | string
+type CSSPropertiesWithValues = {
+  [K in keyof CSSProperties]: string | number
+}
+
+interface StyleValue<T extends keyof CSSPropertiesWithValues> {
+  from: CSSPropertiesWithValues[T]
+  to: CSSPropertiesWithValues[T]
+}
+
+interface TextProps extends React.HTMLAttributes<HTMLSpanElement> {
+  label: string
+  styles: Partial<{
+    [K in keyof CSSPropertiesWithValues]: StyleValue<K>
+  }>
+  containerRef: React.RefObject<HTMLDivElement>
+  radius?: number
+  falloff?: "linear" | "exponential" | "gaussian"
+}
+
+const TextCursorProximity = forwardRef<HTMLSpanElement, TextProps>(
+  (
+    {
+      label,
+      styles,
+      containerRef,
+      radius = 50,
+      falloff = "linear",
+      className,
+      onClick,
+      ...props
+    },
+    ref
+  ) => {
+    const letterRefs = useRef<(HTMLSpanElement | null)[]>([])
+    const mousePositionRef = useMousePositionRef(containerRef)
+    
+    // Create a motion value for each letter's proximity
+    const letterProximities = useRef(
+      Array(label.replace(/\s/g, "").length)
+        .fill(0)
+        .map(() => useMotionValue(0))
+    )
+
+    const calculateDistance = (
+      x1: number,
+      y1: number,
+      x2: number,
+      y2: number
+    ): number => {
+      return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
+    }
+
+    const calculateFalloff = (distance: number): number => {
+      const normalizedDistance = Math.min(Math.max(1 - distance / radius, 0), 1)
+
+      switch (falloff) {
+        case "exponential":
+          return Math.pow(normalizedDistance, 2)
+        case "gaussian":
+          return Math.exp(-Math.pow(distance / (radius / 2), 2) / 2)
+        case "linear":
+        default:
+          return normalizedDistance
+      }
+    }
+
+    useAnimationFrame(() => {
+      if (!containerRef.current) return
+      const containerRect = containerRef.current.getBoundingClientRect()
+
+      letterRefs.current.forEach((letterRef, index) => {
+        if (!letterRef) return
+
+        const rect = letterRef.getBoundingClientRect()
+        const letterCenterX = rect.left + rect.width / 2 - containerRect.left
+        const letterCenterY = rect.top + rect.height / 2 - containerRect.top
+
+        const distance = calculateDistance(
+          mousePositionRef.current.x,
+          mousePositionRef.current.y,
+          letterCenterX,
+          letterCenterY
+        )
+
+        const proximity = calculateFalloff(distance)
+        letterProximities.current[index].set(proximity)
+      })
+    })
+
+    const words = label.split(" ")
+    let letterIndex = 0
 
     return (
-        <svg
-            ref={svgRef}
-            width="100%"
-            height="100%"
-            viewBox="0 0 300 100"
-            xmlns="http://www.w3.org/2000/svg"
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            onMouseMove={(e) => setCursor({ x: e.clientX, y: e.clientY })}
-            className="select-none"
-        >
-            <defs>
-                <linearGradient
-                    id="textGradient"
-                    gradientUnits="userSpaceOnUse"
-                    cx="50%"
-                    cy="50%"
-                    r="25%"
+      <span
+        ref={ref}
+        className={`${className} inline`}
+        onClick={onClick}
+        {...props}
+      >
+        {words.map((word, wordIndex) => (
+          <span key={wordIndex} className="inline-block whitespace-nowrap">
+            {word.split("").map((letter) => {
+              const currentLetterIndex = letterIndex++
+              const proximity = letterProximities.current[currentLetterIndex]
+              
+              // Create transformed values for each style property
+              const transformedStyles = Object.entries(styles).reduce((acc, [key, value]) => {
+                acc[key] = useTransform(proximity, [0, 1], [value.from, value.to])
+                return acc
+              }, {} as Record<string, any>)
+
+              return (
+                <motion.span
+                  key={currentLetterIndex}
+                  ref={(el: HTMLSpanElement | null) => {
+                    letterRefs.current[currentLetterIndex] = el
+                  }}
+                  className="inline-block"
+                  aria-hidden="true"
+                  style={transformedStyles}
                 >
-                    {hovered && (
-                        <>
-                            <stop offset="0%" stopColor="#9945FF" />
-                            <stop offset="25%" stopColor="#14F195" />
-                            <stop offset="50%" stopColor="#00FFA3" />
-                            <stop offset="75%" stopColor="#9945FF" />
-                            <stop offset="100%" stopColor="#14F195" />
-                        </>
-                    )}
-                </linearGradient>
+                  {letter}
+                </motion.span>
+              )
+            })}
+            {wordIndex < words.length - 1 && (
+              <span className="inline-block">&nbsp;</span>
+            )}
+          </span>
+        ))}
+        <span className="sr-only">{label}</span>
+      </span>
+    )
+  }
+)
 
-                <motion.radialGradient
-                    id="revealMask"
-                    gradientUnits="userSpaceOnUse"
-                    r="20%"
-                    animate={maskPosition}
-                    transition={{ duration: duration ?? 0, ease: "easeOut" }}
-
-                // example for a smoother animation below
-
-                //   transition={{
-                //     type: "spring",
-                //     stiffness: 300,
-                //     damping: 50,
-                //   }}
-                >
-                    <stop offset="0%" stopColor="white" />
-                    <stop offset="100%" stopColor="black" />
-                </motion.radialGradient>
-                <mask id="textMask">
-                    <rect
-                        x="0"
-                        y="0"
-                        width="100%"
-                        height="100%"
-                        fill="url(#revealMask)"
-                    />
-                </mask>
-            </defs>
-            <text
-                x="50%"
-                y="50%"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                strokeWidth="0.3"
-                className="font-[helvetica] opacity-35 font-bold stroke-neutral-500 dark:stroke-neutral-800 fill-transparent text-6xl  "
-                style={{ opacity: hovered ? 0.7 : 0 }}
-            >
-                {text}
-            </text>
-            <motion.text
-                x="50%"
-                y="50%"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                strokeWidth="0.3"
-                className="font-[helvetica] font-bold fill-transparent text-6xl   stroke-neutral-200 dark:stroke-neutral-800"
-                initial={{ strokeDashoffset: 1000, strokeDasharray: 1000 }}
-                animate={{
-                    strokeDashoffset: 0,
-                    strokeDasharray: 1000,
-                }}
-                transition={{
-                    duration: 4,
-                    ease: "easeInOut",
-                }}
-            >
-                {text}
-            </motion.text>
-            <text
-                x="50%"
-                y="50%"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                stroke="url(#textGradient)"
-                strokeWidth="0.3"
-                mask="url(#textMask)"
-                className="font-[helvetica] font-bold fill-transparent text-6xl  "
-            >
-                {text}
-            </text>
-        </svg>
-    );
-};
+TextCursorProximity.displayName = "TextCursorProximity"
+export default TextCursorProximity

@@ -41,10 +41,10 @@ export default function BalanceChart({ chartData }: BalanceChartProps) {
   const periods: Period[] = ['day', 'week', 'month', 'year']
 
   return (
-    <Card>
+    <Card className='bg-white'>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-blue-500">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <TrendingUp className="w-4 h-4" />
             <span className="text-lg font-semibold">Balance Chart</span>
           </CardTitle>
@@ -92,7 +92,7 @@ export default function BalanceChart({ chartData }: BalanceChartProps) {
               <Area 
                 type="monotone" 
                 dataKey="value" 
-                stroke="#3b82f6" 
+                stroke="#004AAD" 
                 strokeWidth={2}
                 fill="url(#colorValue)" 
               />

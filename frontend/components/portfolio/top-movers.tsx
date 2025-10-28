@@ -29,11 +29,11 @@ export default function TopMovers({ positions = [] }: TopMoversProps) {
   const topMovers = sortedPositions.slice(0, 5)
 
   return (
-    <Card>
+    <Card className='bg-white'>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-gray-500">
-          <Zap className="w-4 h-4" />
-          <span className="text-sm font-semibold">Top Movers (24h)</span>
+          <Zap className="w-4 h-4 text-primary" />
+          <span className="text-sm font-semibold text-primary">Top Movers (24h)</span>
         </CardTitle>
       </CardHeader>
 

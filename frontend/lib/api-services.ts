@@ -22,6 +22,7 @@ interface CommitmentResponse {
   success: boolean
   commitment_address: string
   commitment_version: string
+  transaction_signature:string
   details?: string
   error?: string
 }
@@ -107,7 +108,7 @@ export async function submitCommitment(
   signature: string,
   message: string,
   timestamp: number
-): Promise<{ commitmentAddress: string; commitmentVersion: string }> {
+): Promise<{ commitmentAddress: string; commitmentVersion: string;transactionSignature:string }> {
   const metadata: CommitmentMetadata = {
     chain: 'solana',
     snapshot_timestamp: timestamp,
@@ -135,7 +136,8 @@ export async function submitCommitment(
 
   return {
     commitmentAddress: data.commitment_address,
-    commitmentVersion: data.commitment_version
+    commitmentVersion: data.commitment_version,
+    transactionSignature:data.transaction_signature
   }
 }
 

@@ -32,7 +32,7 @@ export default function AssetCards({ positions = [] }: AssetCardsProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 bg-white sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
       {positions.map((position, index) => {
         const change = position.changes?.percent_1d || 0
         const isPositive = change >= 0

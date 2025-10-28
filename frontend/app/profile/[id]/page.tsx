@@ -12,7 +12,7 @@ export default async function Page({ params }: PageProps) {
 
   return (
     <div className="min-h-screen w-full bg-background  antialiased relative overflow-hidden flex items-center justify-center">
-      <Spotlight />
+   
       <div className="w-full  mx-auto px-4 flex flex-col space-y-10 py-12">
         <NavDock walletAddress={id} />
         <FlexAnonClient apiBase="https://flexanon-delta.vercel.app/api" />

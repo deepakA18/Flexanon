@@ -48,7 +48,7 @@ export default function AssetAllocation({ positions = [], totalValue = 0 }: Asse
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-gray-500">
             <PieChartIcon className="w-4 h-4" />
-            <span className="text-sm font-semibold">Asset Allocation</span>
+            <span className="text-sm font-semibold text-primary">Asset Allocation</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -61,11 +61,11 @@ export default function AssetAllocation({ positions = [], totalValue = 0 }: Asse
   }
 
   return (
-    <Card>
+    <Card className='bg-white'>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-gray-500">
+        <CardTitle className="flex items-center gap-2 text-primary">
           <PieChartIcon className="w-4 h-4" />
-          <span className="text-sm font-semibold">Asset Allocation</span>
+          <span className="text-sm font-semibold text-primary">Asset Allocation</span>
         </CardTitle>
       </CardHeader>
 
@@ -80,7 +80,7 @@ export default function AssetAllocation({ positions = [], totalValue = 0 }: Asse
                 cy="50%"
                 innerRadius={60}
                 outerRadius={90}
-                fill="#8884d8"
+                fill="#004AAD"
                 paddingAngle={2}
                 dataKey="value"
               >
@@ -119,11 +119,11 @@ export default function AssetAllocation({ positions = [], totalValue = 0 }: Asse
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-gray-700 font-medium truncate">
+                  <span className="text-primary font-medium truncate">
                     {item.name}
                   </span>
                 </div>
-                <span className="text-gray-900 font-semibold ml-2">
+                <span className="text-primary font-semibold ml-2">
                   {item.percentage.toFixed(1)}%
                 </span>
               </div>

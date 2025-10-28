@@ -18,9 +18,9 @@ export default function PortfolioMetrics({ portfolio, positions = [] }: Portfoli
     : 'N/A'
 
   return (
-    <Card>
+    <Card className='bg-white'>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-blue-500">
+        <CardTitle className="flex items-center gap-2 text-primary">
           <BarChart3 className="w-4 h-4" />
           <span className="text-lg font-semibold">Portfolio Metrics</span>
         </CardTitle>
@@ -29,7 +29,7 @@ export default function PortfolioMetrics({ portfolio, positions = [] }: Portfoli
       <CardContent className="space-y-3">
         {/* Total Assets */}
         <div className="flex items-center justify-between py-2">
-          <div className="flex items-center gap-2 text-blue-600">
+          <div className="flex items-center gap-2 text-primary">
             <Layers className="w-4 h-4" />
             <span className="text-sm">Total Assets</span>
           </div>
@@ -40,7 +40,7 @@ export default function PortfolioMetrics({ portfolio, positions = [] }: Portfoli
 
         {/* Network */}
         <div className="flex items-center justify-between py-2">
-          <div className="flex items-center gap-2 text-blue-600">
+          <div className="flex items-center gap-2 text-primary">
             <Link2 className="w-4 h-4" />
             <span className="text-sm">Network</span>
           </div>
@@ -53,7 +53,7 @@ export default function PortfolioMetrics({ portfolio, positions = [] }: Portfoli
 
         {/* Total Value */}
         <div className="flex items-center justify-between py-2">
-          <div className="flex items-center gap-2 text-blue-600">
+          <div className="flex items-center gap-2 text-primary">
             <BarChart3 className="w-4 h-4" />
             <span className="text-sm">Total Value</span>
           </div>
@@ -66,7 +66,7 @@ export default function PortfolioMetrics({ portfolio, positions = [] }: Portfoli
 
         {/* Last Updated */}
         <div className="flex items-center justify-between py-2">
-          <div className="flex items-center gap-2 text-blue-600">
+          <div className="flex items-center gap-2 text-primary">
             <Clock className="w-4 h-4" />
             <span className="text-sm">Last Updated</span>
           </div>
@@ -96,8 +96,8 @@ export default function PortfolioMetrics({ portfolio, positions = [] }: Portfoli
           <>
             <Separator className="my-3" />
             <div className="pt-3">
-              <div className="text-xs text-blue-500 mb-1">Wallet Address</div>
-              <div className="font-mono text-xs text-blue-900 bg-gray-50 px-2 py-1.5 rounded">
+              <div className="text-xs text-primary mb-1">Wallet Address</div>
+              <div className="font-mono text-xs text-primary bg-gray-50 px-2 py-1.5 rounded">
                 {shortAddress}
               </div>
             </div>

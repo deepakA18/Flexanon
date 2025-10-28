@@ -246,6 +246,7 @@ export default function ShareablePortfolio({
 
   // Active portfolio and positions
   const activePortfolio = showLiveData ? livePortfolio : committedPortfolio
+  console.log(activePortfolio)
   const activePositions = showLiveData ? livePositions : committedPositions
 
   // If showing live data, create chart data from live
@@ -263,16 +264,7 @@ export default function ShareablePortfolio({
         
         {/* Header - Same as portfolio card but with verification badge */}
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-blue-500" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Shared Portfolio</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <CheckCircle className="w-4 h-4 text-emerald-600" />
-                <span className="text-sm text-emerald-600 font-semibold">✓ Verified On-Chain</span>
-              </div>
-            </div>
-          </div>
+         
           
           <div className="flex items-center gap-3">
             <Button
@@ -291,9 +283,9 @@ export default function ShareablePortfolio({
           <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-yellow-700" />
-                <p className="text-yellow-800 font-semibold text-sm">
-                  ℹ️ This data was verified {dataAge.ageText} and committed to the Solana blockchain.
+                <Clock className="w-5 h-5 text-primary" />
+                <p className="text-primary font-semibold text-sm">
+                   This data was verified {dataAge.ageText} and committed to the Solana blockchain.
                 </p>
               </div>
             </div>
@@ -331,21 +323,12 @@ export default function ShareablePortfolio({
         )}
 
         {/* Privacy Notice */}
-        <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-3 text-center">
-          <div className="flex items-center justify-center gap-2 text-gray-700 text-sm font-medium">
-            <Lock className="w-4 h-4" />
-            <p>
-              <strong>Privacy Protected:</strong> Wallet address hidden. 
-              {privacyScore > 0 && ` ${privacyScore}% private.`} 
-              Cryptographically verified using zero-knowledge proofs.
-            </p>
-          </div>
-        </div>
+        
 
         {/* Top Row - Key Metrics (EXACT SAME AS PORTFOLIO CARD) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
           {/* 1. Total Portfolio Value Card */}
-          <div className={`${cardClasses} md:col-span-4`}>
+          <div className={`$ md:col-span-4`}>
             <PortfolioValue
               totalValue={activePortfolio.total_value}
               pnlPercentage={activePortfolio.pnl_percentage}
@@ -354,32 +337,32 @@ export default function ShareablePortfolio({
           </div>
 
           {/* 4. Portfolio Performance Card */}
-          <div className={`${cardClasses} md:col-span-4`}>
+          <div className={` md:col-span-4`}>
             <PortfolioPerformance positions={activePositions} />
           </div>
 
           {/* 9. Quick Stats Card */}
-          <div className={`${cardClasses} md:col-span-4`}>
+          <div className={` md:col-span-4`}>
             <QuickStats portfolio={activePortfolio} />
           </div>
         </div>
 
         {/* Second Row - Charts (EXACT SAME AS PORTFOLIO CARD) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-          <div className={`${cardClasses} md:col-span-4`}>
+          <div className={` md:col-span-4`}>
             <PortfolioMetrics 
               portfolio={activePortfolio} 
               positions={activePositions} 
             />
           </div>
           {/* 5. Asset Allocation Card */}
-          <div className={`${cardClasses} md:col-span-4`}>
+          <div className={` md:col-span-4`}>
             <AssetAllocation 
               positions={activePositions} 
               totalValue={activePortfolio.total_value} 
             />
           </div>
-          <div className={`${cardClasses} md:col-span-4`}>
+          <div className={` md:col-span-4`}>
             <TopMovers positions={activePositions} />
           </div>
         </div>
@@ -387,7 +370,7 @@ export default function ShareablePortfolio({
         {/* Third Row - Assets (EXACT SAME AS PORTFOLIO CARD) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
           {/* 3. Top Assets Card (Table) */}
-          <div className={`${cardClasses} md:col-span-12`}>
+          <div className={` md:col-span-12`}>
             <TopAssetsList positions={activePositions} />
           </div>
         </div>

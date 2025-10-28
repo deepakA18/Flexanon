@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { motion } from "framer-motion";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -9,13 +9,21 @@ import { useRouter } from "next/navigation";
 export default function ConnectWalletButton() {
   const { connected, publicKey } = useWallet();
   const router = useRouter();
+  const hasNavigated = useRef(false);
 
   useEffect(() => {
-    if (connected && publicKey) {
+    // Navigate immediately when wallet connects
+    if (connected && publicKey && !hasNavigated.current) {
+      hasNavigated.current = true;
       const walletAddress = publicKey.toBase58();
-      router.push(`/profile/${walletAddress}`);
-    } else if (!connected) {
-      router.push(`/`);
+      
+      // Use replace for instant navigation without adding to history
+      router.replace(`/profile/${walletAddress}`);
+    }
+    
+    // Reset navigation flag when wallet disconnects
+    if (!connected) {
+      hasNavigated.current = false;
     }
   }, [connected, publicKey, router]);
 
@@ -25,7 +33,7 @@ export default function ConnectWalletButton() {
       whileTap={{ scale: 0.98 }}
       className="inline-block"
     >
-      <WalletMultiButton className="!text-white transition-all px-4 py-2" />
+      <WalletMultiButton />
     </motion.div>
   );
 }

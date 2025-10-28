@@ -6,7 +6,7 @@ interface PageProps {
 }
 
 export default function SharePage({ params }: PageProps) {
-  return <div className="bg-[#c6dfff] w-full">
+  return <div className="bg-background w-full">
     <ShareablePortfolio shareId={params.shareId} />
   </div>
 }
