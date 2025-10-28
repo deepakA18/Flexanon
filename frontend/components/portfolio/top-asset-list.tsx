@@ -3,6 +3,9 @@
 import React from 'react'
 import { TrendingUp, TrendingDown, List } from 'lucide-react'
 import Image from 'next/image'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 
 interface Position {
   symbol: string
@@ -22,98 +25,103 @@ interface TopAssetsListProps {
 
 export default function TopAssetsList({ positions = [] }: TopAssetsListProps) {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <List className="w-4 h-4 text-gray-500" />
-        <h3 className="text-sm font-semibold text-gray-900">Top Assets</h3>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 ">
+          <List className="w-4 h-4" />
+          <span className="text-sm font-semibold">Top Assets</span>
+        </CardTitle>
+      </CardHeader>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Asset</th>
-              <th className="text-right py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Amount</th>
-              <th className="text-right py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Price</th>
-              <th className="text-right py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Value</th>
-              <th className="text-right py-3 px-3 text-xs font-semibold text-gray-500 uppercase">24h</th>
-            </tr>
-          </thead>
-          <tbody>
-            {positions.map((position, index) => {
-              const change = position.changes?.percent_1d || 0
-              const isPositive = change >= 0
+      <CardContent>
+        {positions.length === 0 ? (
+          <div className="text-center py-8  text-sm">
+            No assets found
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-left">Asset</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">Price</TableHead>
+                  <TableHead className="text-right">Value</TableHead>
+                  <TableHead className="text-right">24h</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {positions.map((position, index) => {
+                  const change = position.changes?.percent_1d || 0
+                  const isPositive = change >= 0
 
-              return (
-                <tr 
-                  key={position.symbol + index}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                >
-                  {/* Asset */}
-                  <td className="py-4 px-3">
-                    <div className="flex items-center gap-3">
-                      {position.icon_url && (
-                        <Image 
-                          src={position.icon_url} 
-                          alt={position.symbol}
-                          className="w-8 h-8 rounded-full"
-                        />
-                      )}
-                      <div>
-                        <div className="font-semibold text-gray-900 text-sm">{position.symbol}</div>
-                        <div className="text-xs text-gray-500">{position.name}</div>
-                      </div>
-                    </div>
-                  </td>
+                  return (
+                    <TableRow key={position.symbol + index}>
+                      {/* Asset */}
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          {position.icon_url && (
+                            <Image 
+                              height={32}
+                              width={32}
+                              src={position.icon_url} 
+                              alt={position.symbol}
+                              className="w-8 h-8 rounded-full"
+                            />
+                          )}
+                          <div>
+                            <div className="font-semibold  text-sm">{position.symbol}</div>
+                            <div className="text-xs ">{position.name}</div>
+                          </div>
+                        </div>
+                      </TableCell>
 
-                  {/* Amount */}
-                  <td className="py-4 px-3 text-right">
-                    <span className="text-sm font-medium text-gray-900">
-                      {parseFloat(position.quantity).toFixed(4)}
-                    </span>
-                  </td>
+                      {/* Amount */}
+                      <TableCell className="text-right">
+                        <span className="text-sm font-medium ">
+                          {parseFloat(position.quantity).toFixed(4)}
+                        </span>
+                      </TableCell>
 
-                  {/* Price */}
-                  <td className="py-4 px-3 text-right">
-                    <span className="text-sm font-medium text-gray-900">
-                      ${position.price.toFixed(2)}
-                    </span>
-                  </td>
+                      {/* Price */}
+                      <TableCell className="text-right">
+                        <span className="text-sm font-medium ">
+                          ${position.price.toFixed(2)}
+                        </span>
+                      </TableCell>
 
-                  {/* Value */}
-                  <td className="py-4 px-3 text-right">
-                    <span className="text-sm font-bold text-gray-900">
-                      ${position.value.toFixed(2)}
-                    </span>
-                  </td>
+                      {/* Value */}
+                      <TableCell className="text-right">
+                        <span className="text-sm font-bold ">
+                          ${position.value.toFixed(2)}
+                        </span>
+                      </TableCell>
 
-                  {/* 24h Change */}
-                  <td className="py-4 px-3 text-right">
-                    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded
-                      ${isPositive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                      {isPositive ? (
-                        <TrendingUp className="w-3 h-3" />
-                      ) : (
-                        <TrendingDown className="w-3 h-3" />
-                      )}
-                      <span className="text-xs font-semibold">
-                        {isPositive ? '+' : ''}{(change * 100).toFixed(2)}%
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {positions.length === 0 && (
-        <div className="text-center py-8 text-gray-500 text-sm">
-          No assets found
-        </div>
-      )}
-    </div>
+                      {/* 24h Change */}
+                      <TableCell className="text-right">
+                        <Badge 
+                          variant="secondary"
+                          className={`inline-flex items-center gap-1
+                            ${isPositive ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}
+                        >
+                          {isPositive ? (
+                            <TrendingUp className="w-3 h-3" />
+                          ) : (
+                            <TrendingDown className="w-3 h-3" />
+                          )}
+                          <span className="text-xs font-semibold">
+                            {isPositive ? '+' : ''}{(change * 100).toFixed(2)}%
+                          </span>
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

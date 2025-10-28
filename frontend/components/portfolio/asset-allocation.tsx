@@ -3,6 +3,8 @@
 import React from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { PieChart as PieChartIcon } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface Position {
   symbol?: string
@@ -42,83 +44,93 @@ export default function AssetAllocation({ positions = [], totalValue = 0 }: Asse
   // Handle empty data
   if (chartData.length === 0) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <PieChartIcon className="w-4 h-4 text-gray-500" />
-          <h3 className="text-sm font-semibold text-gray-900">Asset Allocation</h3>
-        </div>
-        <div className="h-[250px] flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-          <p className="text-gray-500 text-sm">No allocation data</p>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-gray-500">
+            <PieChartIcon className="w-4 h-4" />
+            <span className="text-sm font-semibold">Asset Allocation</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[250px] flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+            <p className="text-gray-500 text-sm">No allocation data</p>
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <PieChartIcon className="w-4 h-4 text-gray-500" />
-        <h3 className="text-sm font-semibold text-gray-900">Asset Allocation</h3>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-gray-500">
+          <PieChartIcon className="w-4 h-4" />
+          <span className="text-sm font-semibold">Asset Allocation</span>
+        </CardTitle>
+      </CardHeader>
 
-      {/* Pie Chart */}
-      <div className="h-[250px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={90}
-              fill="#8884d8"
-              paddingAngle={2}
-              dataKey="value"
-            >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#fff',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-              }}
-              formatter={(value: any, name: any, props: any) => {
-                const val = parseFloat(value)
-                const pct = props?.payload?.percentage || 0
-                if (isNaN(val)) return ['$0.00 (0.0%)', name]
-                return [
-                  `$${val.toFixed(2)} (${pct.toFixed(1)}%)`,
-                  name
-                ]
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Legend */}
-      <div className="space-y-2 max-h-[120px] overflow-y-auto">
-        {chartData.map((item, index) => (
-          <div key={index} className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <div 
-                className="w-3 h-3 rounded-full flex-shrink-0"
-                style={{ backgroundColor: item.color }}
+      <CardContent className="space-y-4">
+        {/* Pie Chart */}
+        <div className="h-[250px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={90}
+                fill="#8884d8"
+                paddingAngle={2}
+                dataKey="value"
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#fff',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                }}
+                formatter={(value: any, name: any, props: any) => {
+                  const val = parseFloat(value)
+                  const pct = props?.payload?.percentage || 0
+                  if (isNaN(val)) return ['$0.00 (0.0%)', name]
+                  return [
+                    `$${val.toFixed(2)} (${pct.toFixed(1)}%)`,
+                    name
+                  ]
+                }}
               />
-              <span className="text-gray-700 font-medium truncate">
-                {item.name}
-              </span>
-            </div>
-            <span className="text-gray-900 font-semibold ml-2">
-              {item.percentage.toFixed(1)}%
-            </span>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Legend */}
+        <ScrollArea className="h-[120px]">
+          <div className="space-y-2">
+            {chartData.map((item, index) => (
+              <div key={index} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-gray-700 font-medium truncate">
+                    {item.name}
+                  </span>
+                </div>
+                <span className="text-gray-900 font-semibold ml-2">
+                  {item.percentage.toFixed(1)}%
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-    </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
   )
 }

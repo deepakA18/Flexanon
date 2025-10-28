@@ -3,6 +3,8 @@
 import React from 'react'
 import { TrendingUp, TrendingDown, Zap } from 'lucide-react'
 import Image from 'next/image'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 interface Position {
   symbol: string
@@ -27,57 +29,66 @@ export default function TopMovers({ positions = [] }: TopMoversProps) {
   const topMovers = sortedPositions.slice(0, 5)
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Zap className="w-4 h-4 text-gray-500" />
-        <h3 className="text-sm font-semibold text-gray-900">Top Movers (24h)</h3>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-gray-500">
+          <Zap className="w-4 h-4" />
+          <span className="text-sm font-semibold">Top Movers (24h)</span>
+        </CardTitle>
+      </CardHeader>
 
-      <div className="space-y-3">
-        {topMovers.map((position, index) => {
-          const change = position.changes?.percent_1d || 0
-          const isPositive = change >= 0
+      <CardContent>
+        {topMovers.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 text-sm">
+            No movers data available
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {topMovers.map((position, index) => {
+              const change = position.changes?.percent_1d || 0
+              const isPositive = change >= 0
 
-          return (
-            <div
-              key={position.symbol + index}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg
-                       hover:bg-gray-100 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                {position.icon_url && (
-                  <Image
-                    src={position.icon_url}
-                    alt={position.symbol}
-                    className="w-8 h-8 rounded-full"
-                  />
-                )}
-                <span className="font-semibold text-gray-900 text-sm">
-                  {position.symbol}
-                </span>
-              </div>
+              return (
+                <div
+                  key={position.symbol + index}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg
+                           hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    {position.icon_url && (
+                      <Image
+                        height={32}
+                        width={32}
+                        src={position.icon_url}
+                        alt={position.symbol}
+                        className="w-8 h-8 rounded-full"
+                      />
+                    )}
+                    <span className="font-semibold text-gray-900 text-sm">
+                      {position.symbol}
+                    </span>
+                  </div>
 
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                ${isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {isPositive ? (
-                  <TrendingUp className="w-4 h-4" />
-                ) : (
-                  <TrendingDown className="w-4 h-4" />
-                )}
-                <span className="text-sm font-bold">
-                  {isPositive ? '+' : ''}{(change * 100).toFixed(2)}%
-                </span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {topMovers.length === 0 && (
-        <div className="text-center py-8 text-gray-500 text-sm">
-          No movers data available
-        </div>
-      )}
-    </div>
+                  <Badge 
+                    variant="secondary"
+                    className={`flex items-center gap-1.5
+                      ${isPositive ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
+                  >
+                    {isPositive ? (
+                      <TrendingUp className="w-4 h-4" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4" />
+                    )}
+                    <span className="text-sm font-bold">
+                      {isPositive ? '+' : ''}{(change * 100).toFixed(2)}%
+                    </span>
+                  </Badge>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

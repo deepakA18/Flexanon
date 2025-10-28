@@ -2,6 +2,8 @@
 
 import React from 'react'
 import { BarChart3, Link2, Layers, Clock } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { PortfolioData } from './types'
 
 interface PortfolioMetricsProps {
@@ -16,43 +18,51 @@ export default function PortfolioMetrics({ portfolio, positions = [] }: Portfoli
     : 'N/A'
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <BarChart3 className="w-4 h-4 text-blue-500" />
-        <h3 className="text-lg font-semibold text-blue-500">Portfolio Metrics</h3>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-blue-500">
+          <BarChart3 className="w-4 h-4" />
+          <span className="text-lg font-semibold">Portfolio Metrics</span>
+        </CardTitle>
+      </CardHeader>
 
-      <div className="space-y-3">
+      <CardContent className="space-y-3">
         {/* Total Assets */}
-        <div className="flex items-center justify-between py-2 border-b border-gray-100">
+        <div className="flex items-center justify-between py-2">
           <div className="flex items-center gap-2 text-blue-600">
             <Layers className="w-4 h-4" />
             <span className="text-sm">Total Assets</span>
           </div>
-          <span className="text-sm font-bold text-gray-900">{positions.length}</span>
+          <span className="text-sm font-bold ">{positions.length}</span>
         </div>
+        
+        <Separator />
 
         {/* Network */}
-        <div className="flex items-center justify-between py-2 border-b border-gray-100">
+        <div className="flex items-center justify-between py-2">
           <div className="flex items-center gap-2 text-blue-600">
             <Link2 className="w-4 h-4" />
             <span className="text-sm">Network</span>
           </div>
-          <span className="text-sm font-semibold text-gray-900 capitalize">
+          <span className="text-sm font-semibold  capitalize">
             {portfolio?.chain || 'Solana'}
           </span>
         </div>
+        
+        <Separator />
 
         {/* Total Value */}
-        <div className="flex items-center justify-between py-2 border-b border-gray-100">
+        <div className="flex items-center justify-between py-2">
           <div className="flex items-center gap-2 text-blue-600">
             <BarChart3 className="w-4 h-4" />
             <span className="text-sm">Total Value</span>
           </div>
-          <span className="text-sm font-bold text-gray-900">
+          <span className="text-sm font-bold ">
             ${(portfolio?.total_value || 0).toFixed(2)}
           </span>
         </div>
+        
+        <Separator />
 
         {/* Last Updated */}
         <div className="flex items-center justify-between py-2">
@@ -60,7 +70,7 @@ export default function PortfolioMetrics({ portfolio, positions = [] }: Portfoli
             <Clock className="w-4 h-4" />
             <span className="text-sm">Last Updated</span>
           </div>
-          <span className="text-xs font-medium text-gray-500">
+          <span className="text-xs font-medium ">
             {portfolio?.snapshot_timestamp
               ? (() => {
                 const now = Date.now()
@@ -80,17 +90,20 @@ export default function PortfolioMetrics({ portfolio, positions = [] }: Portfoli
             }
           </span>
         </div>
-      </div>
 
-      {/* Wallet Address */}
-      {walletAddress && (
-        <div className="pt-3 border-t border-gray-100">
-          <div className="text-xs text-blue-500 mb-1">Wallet Address</div>
-          <div className="font-mono text-xs text-blue-900 bg-gray-50 px-2 py-1.5 rounded">
-            {shortAddress}
-          </div>
-        </div>
-      )}
-    </div>
+        {/* Wallet Address */}
+        {walletAddress && (
+          <>
+            <Separator className="my-3" />
+            <div className="pt-3">
+              <div className="text-xs text-blue-500 mb-1">Wallet Address</div>
+              <div className="font-mono text-xs text-blue-900 bg-gray-50 px-2 py-1.5 rounded">
+                {shortAddress}
+              </div>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   )
 }

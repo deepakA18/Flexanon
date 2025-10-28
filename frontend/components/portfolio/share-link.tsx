@@ -38,7 +38,7 @@ export const ShareLinkDisplay: React.FC<ShareLinkDisplayProps> = ({
             type="text"
             value={shareUrl}
             readOnly
-            className="flex-1 px-3 py-2 text-xs rounded-md font-mono text-green-900 truncate"
+            className="flex-1 px-3 py-2 text-xs rounded-md  text-green-900 truncate"
           />
           <Button
             onClick={onCopy}

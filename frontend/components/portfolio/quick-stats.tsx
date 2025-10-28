@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { DollarSign, TrendingUp, Wallet } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface QuickStatsProps {
   portfolio?: {
@@ -18,13 +19,15 @@ export default function QuickStats({ portfolio }: QuickStatsProps) {
   const isPositive = pnlPercentage >= 0
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <DollarSign className="w-4 h-4 text-blue-500" />
-        <h3 className="text-lg font-semibold text-blue-500">Quick Stats</h3>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-blue-500">
+          <DollarSign className="w-4 h-4" />
+          <span className="text-lg font-semibold">Quick Stats</span>
+        </CardTitle>
+      </CardHeader>
 
-      <div className="space-y-3">
+      <CardContent className="space-y-3">
         {/* Net Worth */}
         <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
           <div className="flex items-center gap-2 text-blue-600 mb-1">
@@ -62,7 +65,7 @@ export default function QuickStats({ portfolio }: QuickStatsProps) {
             {assetsCount} {assetsCount === 1 ? 'asset' : 'assets'}
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
