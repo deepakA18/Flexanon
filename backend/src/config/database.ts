@@ -107,9 +107,9 @@ export async function initDatabase() {
 
     await query(createIndexes);
 
-    console.log('✅ Database schema initialized successfully');
+    console.log('Database schema initialized successfully');
   } catch (error) {
-    console.error('❌ Failed to initialize database:', error);
+    console.error('Failed to initialize database:', error);
     throw error;
   }
 }
