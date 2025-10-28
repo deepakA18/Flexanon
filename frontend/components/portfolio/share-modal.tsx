@@ -51,7 +51,7 @@ export default function ShareModal({
             className="w-full max-w-lg"
             onClick={(e) => e?.stopPropagation?.()}
           >
-            <Card className="border-gray-200 shadow-2xl relative">
+            <Card className="bg-white relative">
               {/* Close Button */}
               <button
                 onClick={onClose}
@@ -64,10 +64,10 @@ export default function ShareModal({
               <CardHeader className="space-y-3 border-b border-gray-100 pb-5">
                 <div className="flex items-start gap-3">
                   <div className="p-2.5 bg-blue-100 rounded-xl flex-shrink-0">
-                    <Share2 className="w-6 h-6 text-blue-600" />
+                    <Share2 className="w-6 h-6 text-primary" />
                   </div>
                   <div className="flex-1 pt-1">
-                    <CardTitle className="text-2xl text-gray-900 mb-1">Share Portfolio</CardTitle>
+                    <CardTitle className="text-2xl text-primary mb-1">Share Portfolio</CardTitle>
                     <CardDescription className="text-gray-600 text-sm leading-relaxed">
                       {shareUrl 
                         ? 'Your portfolio link has been generated successfully' 
@@ -95,7 +95,7 @@ export default function ShareModal({
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 mb-4">
                         <Shield className="w-5 h-5 text-blue-600" />
-                        <h4 className="text-sm font-semibold text-gray-900">Security Features</h4>
+                        <h4 className="text-sm font-semibold text-primary">Security Features</h4>
                       </div>
                       
                       <div className="grid gap-3">
@@ -104,8 +104,8 @@ export default function ShareModal({
                             <Lock className="w-4 h-4 text-green-700" />
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900 mb-0.5">End-to-end encryption</p>
-                            <p className="text-xs text-gray-600 leading-relaxed">All portfolio data is encrypted before sharing</p>
+                            <p className="text-sm font-semibold text-primary mb-0.5">End-to-end encryption</p>
+                            <p className="text-xs text-gray-600 leading-relaxed">Address is encrypted before sharing</p>
                           </div>
                         </div>
                         
@@ -114,8 +114,8 @@ export default function ShareModal({
                             <Eye className="w-4 h-4 text-blue-700" />
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900 mb-0.5">Anonymous sharing</p>
-                            <p className="text-xs text-gray-600 leading-relaxed">No personal information is included in the link</p>
+                            <p className="text-sm font-semibold text-primary mb-0.5">Anonymous sharing</p>
+                            <p className="text-xs text-gray-600 leading-relaxed">No address  is included in the link</p>
                           </div>
                         </div>
                         
@@ -124,8 +124,8 @@ export default function ShareModal({
                             <Shield className="w-4 h-4 text-purple-700" />
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900 mb-0.5">No server storage</p>
-                            <p className="text-xs text-gray-600 leading-relaxed">Your data is never stored on our servers</p>
+                            <p className="text-sm font-semibold text-primary mb-0.5">No server storage</p>
+                            <p className="text-xs text-gray-600 leading-relaxed">Your address is never stored on our servers</p>
                           </div>
                         </div>
                       </div>
@@ -137,7 +137,7 @@ export default function ShareModal({
                         onClick={onGenerate}
                         disabled={loading}
                         size="lg"
-                        className="flex-1 gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm h-11"
+                        className="flex-1 gap-2 bg-primary text-white font-semibold shadow-sm h-11"
                       >
                         {loading ? (
                           <>
@@ -189,7 +189,7 @@ export default function ShareModal({
                             value={shareUrl}
                             readOnly
                             onClick={(e) => e.currentTarget.select()}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-sm font-mono text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all cursor-pointer hover:bg-gray-100"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-sm font-mono text-primary outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all cursor-pointer hover:bg-gray-100"
                           />
                         </div>
                       </div>
