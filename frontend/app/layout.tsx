@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FLEXANON",
+  title: "Flexanon",
   description: "ANONYMOUS IDENTITY ON SOLANA POWERED BY ZERION",
 };
 

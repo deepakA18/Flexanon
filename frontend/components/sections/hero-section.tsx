@@ -415,7 +415,7 @@ export default function Preview() {
 
         <CornerDecoration color={colors.primary} position="top-left" />
         <CornerDecoration color={colors.primary} position="bottom-left" />
-        <ScanLines color={colors.primary} />
+       
       </div>
     </motion.div>
   )
