@@ -36,9 +36,7 @@ export default function ConnectWalletCard() {
       </div>
 
       {/* Manual redirect button */}
-      <Button asChild variant="outline">
-        <Link href="/">Go to home page now</Link>
-      </Button>
+     
     </motion.div>
   )
 }
