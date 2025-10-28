@@ -304,7 +304,7 @@ export default function Preview() {
 
       {/* ===== MAIN CONTENT CONTAINER ===== */}
 
-      <div className="relative w-full h-full">
+      <div className="relative w-full h-full bg-primary">
         {/* Left side - Text content */}
         <div className="flex flex-col pl-6 py-20 sm:pl-12 md:pl-16 lg:pl-24 h-[60vh] justify-between ">
           <div className="  flex flex-col justify-center   z-10 max-w-2xl">
@@ -342,7 +342,7 @@ export default function Preview() {
               className="mt-5"
             >
               <TextCursorProximity
-                label="POWERED BY ZERION"
+                label="ANONYMOUS IDENTITY ON SOLANA POWERED BY ZERION"
                 className="text-sm sm:text-base md:text-lg lg:text-xl font-overusedGrotesk opacity-60 uppercase leading-none"
                 styles={{
                   transform: {
