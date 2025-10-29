@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Flexanon",
-  description: "ANONYMOUS IDENTITY ON SOLANA POWERED BY ZERION",
+  description: "ANONYMOUS PORTFOLIO ON SOLANA POWERED BY ZERION",
 };
 
 export default function RootLayout({
