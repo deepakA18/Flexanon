@@ -1,10 +1,6 @@
 import crypto from 'crypto';
 
 /**
- * Hashing utilities for Flexanon
- */
-
-/**
  * Hash a wallet address to create owner identifier
  */
 export function hashWalletAddress(address: string): string {
