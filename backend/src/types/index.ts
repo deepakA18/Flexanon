@@ -16,6 +16,10 @@ export interface ZerionAsset {
   price: number;
   value: number;
   icon_url?: string;
+  changes?: {
+    absolute_1d: number;  // 24h change in USD
+    percent_1d: number;   // 24h change in percentage
+  };
 }
 
 export interface ZerionPortfolio {

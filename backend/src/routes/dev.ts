@@ -5,7 +5,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { getZerionClientOrMock } from '../lib/mock-zerion.js';
+import { getZerionClient } from '../lib/mock-zerion.js';
 import { PublicKey } from '@solana/web3.js';
 
 const router = Router();
@@ -31,7 +31,7 @@ router.post('/test-zerion', async (req: Request, res: Response) => {
     }
 
     // Fetch from Zerion
-    const zerionClient = await getZerionClientOrMock();
+    const zerionClient = await getZerionClient();
     const portfolio = await zerionClient.getPortfolio(wallet_address, 'solana');
 
     res.json({
@@ -75,7 +75,7 @@ router.get('/wallet-chart/:wallet_address', async (req: Request, res: Response) 
       return res.status(400).json({ error: 'Invalid Solana address' });
     }
 
-    const zerionClient = await getZerionClientOrMock();
+    const zerionClient = await getZerionClient();
     const chartData = await zerionClient.getChartData(wallet_address, period as any);
 
     if (!chartData) {
@@ -118,7 +118,7 @@ router.get('/wallet-positions/:wallet_address', async (req: Request, res: Respon
     }
 
     // Get portfolio which includes positions
-    const zerionClient = await getZerionClientOrMock();
+    const zerionClient = await getZerionClient();
     const portfolio = await zerionClient.getPortfolio(wallet_address, chain);
 
     res.json({
@@ -135,7 +135,8 @@ router.get('/wallet-positions/:wallet_address', async (req: Request, res: Respon
         price: asset.price,
         value: asset.value,
         icon_url: asset.icon_url,
-        asset_code: asset.asset_code
+        asset_code: asset.asset_code,
+        changes: asset.changes  // Include 24h price changes
       }))
     });
 
@@ -153,7 +154,7 @@ router.get('/wallet-positions/:wallet_address', async (req: Request, res: Respon
  */
 router.get('/test-health', async (req: Request, res: Response) => {
   try {
-    const zerionClient = await getZerionClientOrMock();
+    const zerionClient = await getZerionClient();
     const healthy = await zerionClient.healthCheck();
     
     res.json({

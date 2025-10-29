@@ -68,13 +68,14 @@ export class ZerionClient {
 
       const positions = positionsResponse.data.data || [];
 
-      // Parse assets
+      // Parse assets WITH changes data
       const assets: ZerionAsset[] = positions.map((position: any) => {
         const attributes = position.attributes || {};
         const fungibleInfo = attributes.fungible_info || {};
         const quantity = attributes.quantity || {};
         const value = attributes.value || 0;
         const price = attributes.price || 0;
+        const changes = attributes.changes || {};
 
         // Find the implementation for the current chain
         const implementations = fungibleInfo.implementations || [];
@@ -87,7 +88,11 @@ export class ZerionClient {
           quantity: quantity.numeric || '0',
           price: price,
           value: value,
-          icon_url: fungibleInfo.icon?.url
+          icon_url: fungibleInfo.icon?.url,
+          changes: {
+            absolute_1d: changes.absolute_1d || 0,
+            percent_1d: changes.percent_1d || 0
+          }
         };
       });
 

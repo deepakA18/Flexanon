@@ -342,7 +342,7 @@ export default function Preview() {
               className="mt-5"
             >
               <TextCursorProximity
-                label="ANONYMOUS IDENTITY ON SOLANA POWERED BY ZERION"
+                label="ANONYMOUS PORTFOLIO ON SOLANA POWERED BY ZERION"
                 className="text-sm sm:text-base md:text-lg lg:text-xl font-overusedGrotesk opacity-60 uppercase leading-none"
                 styles={{
                   transform: {
