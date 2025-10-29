@@ -3,10 +3,6 @@ import { query } from '../config/database.js';
 
 const router = Router();
 
-/**
- * HACKATHON MVP - Free tier only (10 refreshes)
- * Pro subscription: Coming Soon
- */
 
 /**
  * GET /api/subscription/status?wallet=xxx
