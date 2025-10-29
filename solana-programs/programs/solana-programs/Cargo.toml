@@ -17,6 +17,10 @@ no-log-ix-name = []
 idl-build = ["anchor-lang/idl-build"]
 
 
+[lints.rust]
+unexpected-cfgs = {level = "warn", check-cfgs = ['cfg(target_os, values("solana"))']}
+
+
 [dependencies]
 anchor-lang = {version = "0.31.1", features = ["init-if-needed"]}
 
