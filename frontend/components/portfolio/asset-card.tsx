@@ -32,7 +32,7 @@ export default function AssetCards({ positions = [] }: AssetCardsProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 bg-white sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+    <div className="grid text-primary grid-cols-2 bg-white sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
       {positions.map((position, index) => {
         const change = position.changes?.percent_1d || 0
         const isPositive = change >= 0
@@ -40,7 +40,7 @@ export default function AssetCards({ positions = [] }: AssetCardsProps) {
         return (
           <Card
             key={position.symbol + index}
-            className="bg-gradient-to-br from-white to-gray-50 hover:shadow-lg 
+            className="bg-gradient-to-br text-primary from-white to-gray-50 hover:shadow-lg 
                      hover:border-gray-300 hover:-translate-y-1 transition-all duration-200 cursor-pointer"
           >
             <CardContent className="p-4">
@@ -104,7 +104,7 @@ export default function AssetCards({ positions = [] }: AssetCardsProps) {
                     <TrendingDown className="w-3 h-3" />
                   )}
                   <span className="text-xs font-bold">
-                    {isPositive ? '+' : ''}{(change * 100).toFixed(2)}%
+                    {isPositive ? '+' : ''}{(change ).toFixed(2)}%
                   </span>
                 </Badge>
               </div>

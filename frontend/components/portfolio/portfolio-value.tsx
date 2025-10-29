@@ -12,6 +12,7 @@ interface PortfolioValueProps {
 }
 
 export default function PortfolioValue({ totalValue = 0, pnlPercentage = 0, positions = [] }: PortfolioValueProps) {
+  console.log(pnlPercentage);
   const isPositive = pnlPercentage >= 0
   const absoluteChange = positions[0]?.changes?.absolute_1d || 0
   const assetsCount = positions.length
@@ -33,7 +34,7 @@ export default function PortfolioValue({ totalValue = 0, pnlPercentage = 0, posi
         </div>
 
         {/* Change Section */}
-        <div className="space-y-3">
+        <div className="space-y-20">
           {/* Badge */}
           <Badge 
             variant="secondary" 
@@ -45,7 +46,7 @@ export default function PortfolioValue({ totalValue = 0, pnlPercentage = 0, posi
               <ArrowDownRight className="w-5 h-5 text-red-500" />
             )}
             <span className="text-xl font-bold">
-              {isPositive ? '+' : ''}{(pnlPercentage * 100).toFixed(2)}%
+              {isPositive ? '+' : ''}{(pnlPercentage ).toFixed(2)}%
             </span>
           </Badge>
 

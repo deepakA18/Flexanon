@@ -18,7 +18,7 @@ export default function PortfolioMetrics({ portfolio, positions = [] }: Portfoli
     : 'N/A'
 
   return (
-    <Card className='bg-white'>
+    <Card className='bg-white text-primary'>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-primary">
           <BarChart3 className="w-4 h-4" />

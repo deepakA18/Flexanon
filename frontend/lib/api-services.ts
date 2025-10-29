@@ -67,6 +67,7 @@ export async function fetchPortfolio(
   })
 
   const data: PortfolioResponse = await response.json()
+  console.log(data);
   if (!data.success || !data.portfolio) {
     throw new Error('Failed to fetch portfolio data')
   }
@@ -81,6 +82,7 @@ export async function fetchPortfolio(
 export async function fetchWalletPositions(apiBase: string, walletAddress: string) {
   try {
     const res = await fetch(`${apiBase}/dev/wallet-positions/${walletAddress}?chain=solana`);
+    console.log(res);
     if (!res.ok) throw new Error('Failed to fetch wallet positions');
     return res.json();
   } catch (e) {

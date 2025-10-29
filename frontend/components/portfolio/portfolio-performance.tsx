@@ -37,7 +37,7 @@ export default function PortfolioPerformance({ positions = [] }: PortfolioPerfor
               <TrendingDown className={`w-6 h-6 ${isPositive ? 'text-blue-600' : 'text-red-600'}`} />
             )}
             <span className={`text-3xl font-bold ${isPositive ? 'text-blue-700' : 'text-red-700'}`}>
-              {isPositive ? '+' : ''}{(percentChange * 100).toFixed(2)}%
+              {isPositive ? '+' : ''}{(percentChange ).toFixed(2)}%
             </span>
           </Badge>
 

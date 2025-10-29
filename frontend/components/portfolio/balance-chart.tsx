@@ -24,19 +24,45 @@ export default function BalanceChart({ chartData }: BalanceChartProps) {
   const [period, setPeriod] = useState<Period>('day')
 
   const points = chartData?.chart_data?.attributes?.points || []
+  const endAt = chartData?.chart_data?.attributes?.end_at
   
-  // Sample every nth point based on period for better visualization
-  const samplingRate = period === 'day' ? 12 : period === 'week' ? 24 : 48
-  const data = points
+  // Filter points based on selected period
+  const getFilteredPoints = () => {
+    if (!endAt || points.length === 0) return points
+
+    const endDate = new Date(endAt)
+    const periodInMs = {
+      day: 24 * 60 * 60 * 1000,
+      week: 7 * 24 * 60 * 60 * 1000,
+      month: 30 * 24 * 60 * 60 * 1000,
+      year: 365 * 24 * 60 * 60 * 1000
+    }
+
+    const startTime = (endDate.getTime() - periodInMs[period]) / 1000
+
+    return points.filter(([timestamp]) => timestamp >= startTime)
+  }
+
+  const filteredPoints = getFilteredPoints()
+  
+  // Sample points for better visualization
+  const samplingRate = period === 'day' ? 1 : period === 'week' ? 4 : period === 'month' ? 12 : 24
+  const data = filteredPoints
     .filter((_, index) => index % samplingRate === 0)
-    .map(([timestamp, value]) => ({
-      time: new Date(timestamp * 1000).toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }),
-      value,
-      fullDate: new Date(timestamp * 1000)
-    }))
+    .map(([timestamp, value]) => {
+      const date = new Date(timestamp * 1000)
+      return {
+        time: period === 'day' 
+          ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : period === 'week'
+          ? date.toLocaleDateString([], { month: 'short', day: 'numeric' })
+          : period === 'month'
+          ? date.toLocaleDateString([], { month: 'short', day: 'numeric' })
+          : date.toLocaleDateString([], { month: 'short', year: 'numeric' }),
+        value,
+        fullDate: date
+      }
+    })
 
   const periods: Period[] = ['day', 'week', 'month', 'year']
 
@@ -50,7 +76,26 @@ export default function BalanceChart({ chartData }: BalanceChartProps) {
           </CardTitle>
 
           {/* Period Selector */}
-          
+          <div 
+            className="flex gap-1 bg-gray-100 text-primary rounded-lg p-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {periods.map((p) => (
+              <Button
+                key={p}
+                onClick={() => setPeriod(p)}
+                variant={period === p ? 'default' : 'ghost'}
+                size="sm"
+                className={`capitalize text-xs px-3 py-1 h-8 hover:bg-white ${
+                  period === p 
+                    ? 'bg-white shadow-sm text-primary' 
+                    : 'hover:bg-white/50'
+                }`}
+              >
+                {p}
+              </Button>
+            ))}
+          </div>
         </div>
       </CardHeader>
 
