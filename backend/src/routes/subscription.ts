@@ -4,8 +4,8 @@ import { query } from '../config/database.js';
 const router = Router();
 
 /**
- * HACKATHON MVP - Simple subscription system
- * No payments, just demo functionality
+ * HACKATHON MVP - Free tier only (10 refreshes)
+ * Pro subscription: Coming Soon
  */
 
 /**
@@ -43,15 +43,17 @@ router.get('/status', async (req: Request, res: Response) => {
     const sub = result.rows[0];
 
     res.json({
-      plan: sub.plan,
+      plan: sub.plan, // Always 'free' for now
       status: sub.status,
       updates_used: sub.updates_used,
       updates_remaining: sub.updates_limit - sub.updates_used,
-      updates_limit: sub.updates_limit,
+      updates_limit: sub.updates_limit, // 10 for free tier
       links_used: sub.links_used,
       links_remaining: sub.links_limit - sub.links_used,
-      links_limit: sub.links_limit,
-      expires_at: sub.expires_at,
+      links_limit: sub.links_limit, // 1 for free tier
+      expires_at: null, // Free tier doesn't expire
+      pro_available: false, // Pro subscription coming soon
+      message: 'Free tier: 10 portfolio refreshes'
     });
   } catch (error: any) {
     console.error('Error fetching subscription:', error);
@@ -61,7 +63,7 @@ router.get('/status', async (req: Request, res: Response) => {
 
 /**
  * POST /api/subscription/use-update
- * Increment update counter
+ * Increment update counter (free tier only)
  */
 router.post('/use-update', async (req: Request, res: Response) => {
   try {
@@ -83,15 +85,14 @@ router.post('/use-update', async (req: Request, res: Response) => {
 
     const sub = result.rows[0];
 
-    // Check if limit reached
+    // Check if limit reached (10 for free tier)
     if (sub.updates_used >= sub.updates_limit) {
       return res.status(403).json({
         error: 'Update limit reached',
-        message: sub.plan === 'free' 
-          ? 'Upgrade to Pro for 1000 updates/month'
-          : 'Monthly update limit reached',
+        message: 'You have used all 10 free portfolio refreshes. Pro subscription coming soon!',
         updates_used: sub.updates_used,
         updates_limit: sub.updates_limit,
+        pro_coming_soon: true
       });
     }
 
@@ -107,6 +108,7 @@ router.post('/use-update', async (req: Request, res: Response) => {
       success: true,
       updates_used: sub.updates_used + 1,
       updates_remaining: sub.updates_limit - sub.updates_used - 1,
+      message: `${sub.updates_limit - sub.updates_used - 1} refreshes remaining`
     });
   } catch (error: any) {
     console.error('Error using update:', error);
@@ -115,53 +117,58 @@ router.post('/use-update', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/subscription/upgrade-demo
- * DEMO ONLY: Upgrade to pro without payment
- * In production, this would integrate with Stripe
+ * GET /api/subscription/plans
+ * Get available subscription plans
  */
-router.post('/upgrade-demo', async (req: Request, res: Response) => {
-  try {
-    const { wallet_address } = req.body;
-
-    if (!wallet_address) {
-      return res.status(400).json({ error: 'wallet_address required' });
-    }
-
-    console.log(`📈 Demo upgrade: ${wallet_address} → Pro`);
-
-    // Upgrade to Pro
-    await query(
-      `INSERT INTO subscriptions (wallet_address, plan, updates_limit, links_limit, expires_at)
-       VALUES ($1, 'pro', 1000, 3, NOW() + INTERVAL '30 days')
-       ON CONFLICT (wallet_address)
-       DO UPDATE SET 
-         plan = 'pro',
-         updates_limit = 1000,
-         links_limit = 3,
-         expires_at = NOW() + INTERVAL '30 days',
-         status = 'active'`,
-      [wallet_address]
-    );
-
-    res.json({
-      success: true,
-      plan: 'pro',
-      message: 'Upgraded to Pro! (Demo mode - no payment required)',
-      updates_limit: 1000,
-      links_limit: 3,
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    });
-  } catch (error: any) {
-    console.error('Error upgrading subscription:', error);
-    res.status(500).json({ error: 'Failed to upgrade subscription' });
-  }
+router.get('/plans', async (req: Request, res: Response) => {
+  res.json({
+    plans: [
+      {
+        id: 'free',
+        name: 'Free Tier',
+        price: 0,
+        currency: 'USD',
+        interval: 'lifetime',
+        features: [
+          '10 portfolio refreshes',
+          '1 active share link',
+          'Merkle proof privacy',
+          'On-chain commitment',
+          'Basic analytics'
+        ],
+        updates_limit: 10,
+        links_limit: 1,
+        available: true
+      },
+      {
+        id: 'pro',
+        name: 'Pro',
+        price: 9.99,
+        currency: 'USD',
+        interval: 'month',
+        features: [
+          'Unlimited portfolio refreshes',
+          '10 active share links',
+          'Advanced analytics',
+          'Custom privacy settings',
+          'Priority support',
+          'API access'
+        ],
+        updates_limit: -1, // Unlimited
+        links_limit: 10,
+        available: false,
+        coming_soon: true,
+        estimated_launch: 'Q1 2026'
+      }
+    ]
+  });
 });
 
 /**
- * POST /api/subscription/downgrade-demo
- * DEMO ONLY: Downgrade back to free
+ * POST /api/subscription/reset-demo
+ * DEMO ONLY: Reset free tier counter for testing
  */
-router.post('/downgrade-demo', async (req: Request, res: Response) => {
+router.post('/reset-demo', async (req: Request, res: Response) => {
   try {
     const { wallet_address } = req.body;
 
@@ -169,27 +176,23 @@ router.post('/downgrade-demo', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'wallet_address required' });
     }
 
-    console.log(`📉 Demo downgrade: ${wallet_address} → Free`);
+    console.log(`🔄 Demo reset: ${wallet_address} counter reset`);
 
     await query(
       `UPDATE subscriptions
-       SET plan = 'free',
-           updates_limit = 10,
-           links_limit = 1,
-           updates_used = 0,
-           expires_at = NULL
+       SET updates_used = 0
        WHERE wallet_address = $1`,
       [wallet_address]
     );
 
     res.json({
       success: true,
-      plan: 'free',
-      message: 'Downgraded to Free tier',
+      message: 'Free tier counter reset to 0',
+      updates_remaining: 10
     });
   } catch (error: any) {
-    console.error('Error downgrading subscription:', error);
-    res.status(500).json({ error: 'Failed to downgrade subscription' });
+    console.error('Error resetting subscription:', error);
+    res.status(500).json({ error: 'Failed to reset subscription' });
   }
 });
 
