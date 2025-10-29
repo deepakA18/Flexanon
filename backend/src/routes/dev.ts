@@ -135,7 +135,8 @@ router.get('/wallet-positions/:wallet_address', async (req: Request, res: Respon
         price: asset.price,
         value: asset.value,
         icon_url: asset.icon_url,
-        asset_code: asset.asset_code
+        asset_code: asset.asset_code,
+        changes: asset.changes  // Include 24h price changes
       }))
     });
 
