@@ -244,19 +244,6 @@ export default function ShareablePortfolio({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
       <div className="max-w-[1800px] mx-auto space-y-6">
-        
-        {/* Minimal Header - Share button only */}
-        <div className="flex items-center justify-end">
-          <Button
-            onClick={copyLink}
-            variant="outline"
-            size="sm"
-            className="gap-2 border-gray-300 text-gray-700 hover:bg-white hover:shadow-sm bg-white/80 backdrop-blur-sm"
-          >
-            <Share2 className="w-4 h-4" />
-            Share
-          </Button>
-        </div>
 
         {/* Compact Verification Badge */}
         {!showLiveData && (

@@ -78,6 +78,7 @@ export async function fetchPortfolio(
 
   return data.portfolio
 }
+
 // In your lib/api-services.ts
 export async function fetchWalletPositions(apiBase: string, walletAddress: string) {
   try {
@@ -95,7 +96,20 @@ export async function fetchWalletChart(apiBase: string, walletAddress: string, p
   try {
     const res = await fetch(`${apiBase}/dev/wallet-chart/${walletAddress}?period=${period}`);
     if (!res.ok) throw new Error('Failed to fetch wallet chart');
-    return res.json();
+    const data = await res.json();
+    
+    // Return in the format expected by the components
+    if (data.success && data.chart_data) {
+      return {
+        chart_data: {
+          attributes: {
+            points: data.chart_data.attributes?.points || []
+          }
+        }
+      };
+    }
+    
+    return null;
   } catch (e) {
     console.error(e);
     return null;
@@ -143,6 +157,7 @@ export async function submitCommitment(
   }
 }
 
+// UPDATED: Added chartData parameter
 export async function generateShareLink(
   apiBase: string,
   walletAddress: string,
@@ -150,7 +165,8 @@ export async function generateShareLink(
   message: string,
   timestamp: number,
   commitmentAddress: string,
-  commitmentVersion: string
+  commitmentVersion: string,
+  chartData?: any 
 ): Promise<string> {
   const revealPreferences: RevealPreferences = {
     show_total_value: true,
@@ -171,7 +187,8 @@ export async function generateShareLink(
       commitment_address: commitmentAddress,
       commitment_version: commitmentVersion,
       chain: 'solana',
-      reveal_preferences: revealPreferences
+      reveal_preferences: revealPreferences,
+      chart_data: chartData // NEW: Include chart data
     })
   })
 
@@ -186,7 +203,6 @@ export async function generateShareLink(
 }
 
 export async function fetchSubscriptionStatus(
-
   walletAddress: string
 ): Promise<SubscriptionData> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/subscription/status?wallet=${walletAddress}`)

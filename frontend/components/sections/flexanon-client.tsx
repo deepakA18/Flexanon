@@ -54,7 +54,7 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
     if (!walletAddress) return
     try {
       const data = await fetchWalletPositions(apiBase, walletAddress);
-  
+
       setPositions(data?.positions ?? data?.fungible_positions ?? [])
     } catch (e) {
       console.error('fetchWalletPositions error:', e)
@@ -65,7 +65,7 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
   // UPDATED: Accept period parameter
   const fetchWalletChartData = useCallback(async (period: TimePeriod = '1d') => {
     if (!walletAddress) return
-    
+
     setChartLoading(true) // NEW: Set loading state
     try {
       const apiPeriod = mapPeriodToAPI(period)
@@ -242,6 +242,16 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
 
       const { commitmentAddress, commitmentVersion, transactionSignature } = commitmentResult
 
+      setShareStatus('Fetching chart data...')
+      let chartDataForSharing = null
+      try {
+        chartDataForSharing = await fetchWalletChart(apiBase, walletAddress, 'day')
+        console.log('Chart data fetched for sharing:', !!chartDataForSharing)
+      } catch (e) {
+        console.warn('Could not fetch chart data for sharing:', e)
+        // Continue without chart - it's optional
+      }
+
       setShareStatus('Signing ownership...')
       const linkMsg = `FlexAnon Ownership Verification\n\nI am the owner of wallet: ${walletAddress}\nTimestamp: ${timestamp}`
       const linkSigRaw = await signMessage(new TextEncoder().encode(linkMsg))
@@ -256,7 +266,7 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
       }
 
       setShareStatus('Generating share link...')
-      const url = await generateShareLink?.(apiBase, walletAddress, linkSig, linkMsg, timestamp, commitmentAddress, commitmentVersion)
+      const url = await generateShareLink?.(apiBase, walletAddress, linkSig, linkMsg, timestamp, commitmentAddress, commitmentVersion, chartDataForSharing)
 
       if (!url) {
         throw new Error('Failed to generate share URL')
