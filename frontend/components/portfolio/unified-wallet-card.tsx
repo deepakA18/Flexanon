@@ -10,6 +10,7 @@ import AssetAllocation from './asset-allocation'
 import Image from 'next/image'
 import { ScrollArea } from '../ui/scroll-area'
 import html2canvas from 'html2canvas'
+import { logoAbstract } from '@/public'
 
 // ============================================================================
 // Type Definitions
@@ -73,7 +74,6 @@ export interface UnifiedWalletCardProps {
   chartData?: ChartData
   selectedPeriod?: TimePeriod
   isLoadingChart?: boolean
-  logoAbstract?: any
   onRefresh?: () => void
   onShare?: () => void
   onAddAsset?: () => void
@@ -187,7 +187,6 @@ export default function UnifiedWalletCard({
   chartData,
   selectedPeriod = '1d',
   isLoadingChart = false,
-  logoAbstract,
   onAddAsset,
   onFilter,
   onScreenshot,
