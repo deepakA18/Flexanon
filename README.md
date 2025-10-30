@@ -4,9 +4,9 @@
 
 FlexAnon enables users to share their DeFi portfolio with cryptographic proof while maintaining privacy. Built on Solana powered by Zerion.
 
-[![Live Demo](https://img.shields.io/badge/demo-live-success)](https://flexanon-delta.vercel.app)
-[![Solana](https://img.shields.io/badge/Solana-Mainnet-blueviolet)](https://solscan.io)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/demo-live-success)](https://flexanon.vercel.app)
+[![Solana](https://img.shields.io/badge/Solana-Devnet-blueviolet)](https://solscan.io)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)]
 
 ---
 
