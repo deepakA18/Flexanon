@@ -6,7 +6,7 @@ FlexAnon enables users to share their DeFi portfolio with cryptographic proof wh
 
 [![Live Demo](https://img.shields.io/badge/demo-live-success)](https://flexanon.vercel.app)
 [![Solana](https://img.shields.io/badge/Solana-Devnet-blueviolet)](https://solscan.io)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)]
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ---
 
@@ -69,6 +69,7 @@ FlexAnon provides **Data disclosure with cryptographic proof**:
 FlexAnon uses a hybrid architecture combining on-chain security with off-chain performance:
 
 ```
+![Architecture Diagram](./docs/flexanon_arc.png)
 
 ```
 
