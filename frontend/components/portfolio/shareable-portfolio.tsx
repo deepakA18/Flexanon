@@ -6,6 +6,7 @@ import { Shield, AlertCircle, RefreshCw, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import UnifiedWalletCard from './unified-wallet-card'
 import type { PortfolioData } from './types'
+import { usePathname } from 'next/navigation'
 
 interface ShareablePortfolioProps {
   shareId: string
@@ -16,6 +17,8 @@ export default function ShareablePortfolio({
   shareId, 
   apiBase = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api' 
 }: ShareablePortfolioProps) {
+    const pathname = usePathname()
+  const isSharedView = pathname?.includes('/s/') 
   const [committedData, setCommittedData] = useState<any>(null)
   const [liveData, setLiveData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -243,7 +246,7 @@ export default function ShareablePortfolio({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
-      <div className="max-w-[1800px] mx-auto space-y-6">
+      <div className="container mx-auto space-y-6">
 
         {/* Compact Verification Badge */}
         {!showLiveData && (
@@ -316,6 +319,7 @@ export default function ShareablePortfolio({
             pnlPercentage={activePortfolio.pnl_percentage}
             positions={activePositions}
             chartData={chartData}
+            isSharedView={isSharedView}
           />
         </div>
 
