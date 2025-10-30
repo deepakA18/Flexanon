@@ -118,7 +118,7 @@ const calculateMetrics = (positions: Position[], totalValue: number): MetricsDat
     (sum, p) => sum + toNumber(p?.changes?.absolute_1d),
     0
   )
-  
+  console.log(netChange);
   const previousValue = totalValue - netChange
   const netChangePercent = previousValue !== 0 ? (netChange / previousValue) * 100 : 0
 
@@ -151,7 +151,7 @@ const formatCurrency = (value: number, decimals: number = 2): string => {
   })
 }
 
-const formatPercentage = (value: number, decimals: number = 1): string => {
+const formatPercentage = (value: number, decimals: number = 3): string => {
   const sign = value >= 0 ? '+' : ''
   return `${sign}${value.toFixed(decimals)}%`
 }
@@ -550,7 +550,7 @@ interface AssetCardProps {
 
 const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
   const isPositiveChange = asset.change24h >= 0
-
+  console.log(asset);
   return (
     <div 
       className={`rounded-2xl p-3 transition-all h-fit ${
@@ -563,6 +563,7 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
         <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
           {asset.icon.startsWith('http') ? (
             <Image 
+            height={50} width={50}
               src={asset.icon} 
               alt={asset.symbol} 
               className="w-full h-full object-cover" 
@@ -592,7 +593,7 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
           }`}
         >
           <span>⊙</span>
-          <span>{formatPercentage(asset.change24h, 3)}</span>
+          <span>{(Number(asset.change24h)*100).toFixed(3)}%</span>
         </div>
       </div>
 

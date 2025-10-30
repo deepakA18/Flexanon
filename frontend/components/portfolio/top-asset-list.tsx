@@ -110,7 +110,7 @@ export default function TopAssetsList({ positions = [] }: TopAssetsListProps) {
                             <TrendingDown className="w-3 h-3" />
                           )}
                           <span className="text-xs font-semibold">
-                            {isPositive ? '+' : ''}{(change).toFixed(2)}%
+                            {isPositive ? '+' : ''}{(change).toFixed(3)}%
                           </span>
                         </Badge>
                       </TableCell>
