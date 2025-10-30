@@ -23,7 +23,7 @@ interface PortfolioCardProps {
   onRefresh: () => void
   loading: boolean
   refreshing: boolean
-  isSharedView:boolean
+  isSharedView?:boolean
 }
 
 export default function PortfolioCard({ 
