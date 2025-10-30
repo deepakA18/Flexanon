@@ -286,7 +286,7 @@ export default function UnifiedWalletCard({
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 md:h-10 md:w-10 rounded-lg md:rounded-xl bg-white/10 hover:bg-white/20 text-white border-none"
+                  className="h-8 w-8 md:h-10 md:w-10 rounded-lg md:rounded-xl bg-white/10 hover:bg-white/20 hover:text-white text-white border-none"
                   onClick={handleScreenshot}
                   title="Take Screenshot"
                 >
