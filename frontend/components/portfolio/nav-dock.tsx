@@ -25,7 +25,7 @@ export default function NavDock({ walletAddress }: NavDockProps) {
   })
 
   return (
-    <nav className="fixed top-0 left-0 w-full   z-50 ">
+    <nav className="fixed top-0 left-0 w-full bg-white   z-50 ">
       <div className="flex items-center justify-between px-5 py-3 md:px-10">
         {/* Logo */}
         <div className="flex items-center gap-2">
@@ -37,7 +37,7 @@ export default function NavDock({ walletAddress }: NavDockProps) {
             className="rounded-md object-contain"
             priority
           />
-          <span className="text-lg font-semibold tracking-wide">FLEXANON</span>
+
         </div>
 
         {/* Desktop Menu */}
