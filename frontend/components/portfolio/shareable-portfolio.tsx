@@ -2,17 +2,9 @@
 
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Shield, CheckCircle, Copy, AlertCircle, Clock, RefreshCw, Lock } from 'lucide-react'
+import { Shield, AlertCircle, RefreshCw, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import PortfolioValue from './portfolio-value'
-import BalanceChart from './balance-chart'
-import TopAssetsList from './top-asset-list'
-import PortfolioPerformance from './portfolio-performance'
-import AssetAllocation from './asset-allocation'
-import AssetCards from './asset-card'
-import PortfolioMetrics from './portfolio-metrics'
-import TopMovers from './top-movers'
-import QuickStats from './quick-stats'
+import UnifiedWalletCard from './unified-wallet-card'
 import type { PortfolioData } from './types'
 
 interface ShareablePortfolioProps {
@@ -30,11 +22,7 @@ export default function ShareablePortfolio({
   const [fetchingLive, setFetchingLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showLiveData, setShowLiveData] = useState(false)
-  const [isStale, setIsStale] = useState(false)
   const [dataAge, setDataAge] = useState({ hours: 0, minutes: 0, ageText: '' })
-
-  // Same card classes as portfolio card
-  const cardClasses = "bg-white border-blue-500 border-2 p-5 shadow-xl shadow-neutral-950"
 
   useEffect(() => {
     loadShareData()
@@ -80,10 +68,6 @@ export default function ShareablePortfolio({
       }
 
       setDataAge({ hours, minutes, ageText })
-
-      const staleThreshold = 60000 // 1 minute for testing
-      setIsStale(age > staleThreshold)
-
     } catch (e: any) {
       console.error('Error loading share data:', e)
       setError(e?.message || 'Failed to load portfolio')
@@ -116,7 +100,6 @@ export default function ShareablePortfolio({
       setLiveData(data.portfolio)
       setShowLiveData(true)
       toast.success('Latest data fetched successfully!')
-
     } catch (e: any) {
       console.error('Error fetching latest data:', e)
       toast.error(e?.message || 'Failed to fetch latest data')
@@ -195,12 +178,15 @@ export default function ShareablePortfolio({
       symbol: asset.symbol || 'UNKNOWN',
       name: asset.name || asset.symbol,
       quantity: asset.amount?.toString() || '0',
+      amount: parseFloat(asset.amount || '0'),
       price: parseFloat(asset.value_usd?.replace(/[^0-9.-]+/g, '') || '0') / parseFloat(asset.amount || '1'),
       value: parseFloat(asset.value_usd?.replace(/[^0-9.-]+/g, '') || '0'),
       icon_url: asset.icon_url,
+      icon: asset.icon_url,
       asset_code: asset.symbol,
+      token_symbol: asset.symbol,
       changes: {
-        percent_1d: 0,
+        percent_1d: parseFloat(asset.change_24h || '0'),
         absolute_1d: 0
       }
     }))
@@ -208,11 +194,11 @@ export default function ShareablePortfolio({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center space-y-4">
           <div className="relative w-16 h-16 mx-auto">
             <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-[#004aad] border-t-transparent animate-spin"></div>
           </div>
           <p className="text-gray-600 font-medium text-lg">Loading portfolio...</p>
         </div>
@@ -222,7 +208,7 @@ export default function ShareablePortfolio({
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
         <div className="text-center space-y-6 max-w-md">
           <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto">
             <AlertCircle className="w-10 h-10 text-red-600" />
@@ -240,161 +226,134 @@ export default function ShareablePortfolio({
   const livePositions = getPositions('live')
   const changeInfo = getChangeInfo()
 
-  const privacyScore = committedData?.privacy_score || committedData?.metadata?.privacy_score || 0
-  const revealedCount = committedData?.revealed_count || committedData?.metadata?.revealed_count || 0
-  const totalCount = committedData?.total_count || committedData?.metadata?.total_count || 0
-
-  // Active portfolio and positions
   const activePortfolio = showLiveData ? livePortfolio : committedPortfolio
-  console.log(activePortfolio)
   const activePositions = showLiveData ? livePositions : committedPositions
 
-  // If showing live data, create chart data from live
-  const chartData = showLiveData && liveData ? {
-    chart_data: {
-      attributes: {
-        points: [] // Add live chart points if available
-      }
-    }
-  } : null
+  // Chart data should come from the committed/revealed data stored when share link was created
+  // We cannot fetch it live because wallet address is hidden for privacy
+  const chartData = showLiveData 
+    ? liveData?.chart_data
+    : (committedData?.revealed_data?.chart_data || committedData?.chart_data)
+
+  console.log('Chart data available:', !!chartData)
+  if (!chartData) {
+    console.warn('No chart data found. Chart data must be stored when creating the share link.')
+  }
+
 
   return (
-    <div className="min-h-screen p-4 md:p-6">
-      <div className="max-w-[1600px] mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
+      <div className="max-w-[1800px] mx-auto space-y-6">
         
-        {/* Header - Same as portfolio card but with verification badge */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-         
-          
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={copyLink}
-              variant="outline"
-              className="gap-2 border-blue-500 text-blue-500 hover:bg-blue-50"
-            >
-              <Copy className="w-4 h-4" />
-              Copy Link
-            </Button>
-          </div>
+        {/* Minimal Header - Share button only */}
+        <div className="flex items-center justify-end">
+          <Button
+            onClick={copyLink}
+            variant="outline"
+            size="sm"
+            className="gap-2 border-gray-300 text-gray-700 hover:bg-white hover:shadow-sm bg-white/80 backdrop-blur-sm"
+          >
+            <Share2 className="w-4 h-4" />
+            Share
+          </Button>
         </div>
 
-        {/* Stale Data Banner */}
-        {isStale && !showLiveData && (
-          <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" />
-                <p className="text-primary font-semibold text-sm">
-                   This data was verified {dataAge.ageText} and committed to the Solana blockchain.
+        {/* Compact Verification Badge */}
+        {!showLiveData && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-3 shadow-sm">
+            <div className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2 flex-1">
+                <Shield className="w-4 h-4 text-green-600 flex-shrink-0" />
+                <p className="text-green-800 font-medium text-sm">
+                  ✓ Verified on Solana • {dataAge.ageText}
                 </p>
               </div>
+              {committedData?.wallet_address && (
+                <Button
+                  onClick={fetchLatestData}
+                  disabled={fetchingLive}
+                  variant="ghost"
+                  size="sm"
+                  className="text-green-700 hover:text-green-800 hover:bg-green-100 text-xs h-7 px-3 flex-shrink-0"
+                >
+                  {fetchingLive ? (
+                    <>
+                      <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3 h-3 mr-1.5" />
+                      Refresh
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         )}
 
-        {/* Live Data Banner */}
+        {/* Live Data Indicator */}
         {showLiveData && liveData && (
-          <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
-            <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3 shadow-sm">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-blue-700" />
-                <p className="text-blue-800 font-semibold text-sm">
-                  ⚠️ Showing live data (unverified). This has NOT been committed on-chain.
+                <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <p className="text-amber-800 font-medium text-sm">
+                  Live data (unverified)
                 </p>
+                {changeInfo && Math.abs(changeInfo.change) > 0.01 && (
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                    changeInfo.isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {changeInfo.isPositive ? '+' : ''}${changeInfo.change.toFixed(2)}
+                  </span>
+                )}
               </div>
-              {changeInfo && Math.abs(changeInfo.change) > 0.01 && (
-                <div className={`px-3 py-1 rounded-full text-sm font-bold ${
-                  changeInfo.isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}>
-                  {changeInfo.isPositive ? '+' : ''}${changeInfo.change.toFixed(2)} 
-                  ({changeInfo.isPositive ? '+' : ''}{changeInfo.changePercent.toFixed(2)}%)
-                </div>
-              )}
               <Button
                 onClick={dismissLiveData}
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="text-blue-700 border-blue-300"
+                className="text-amber-700 hover:text-amber-800 hover:bg-amber-100 text-xs h-7 px-3"
               >
-                Show Committed Data
+                Show Verified
               </Button>
             </div>
           </div>
         )}
 
-        {/* Privacy Notice */}
-        
-
-        {/* Top Row - Key Metrics (EXACT SAME AS PORTFOLIO CARD) */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-          {/* 1. Total Portfolio Value Card */}
-          <div className={`$ md:col-span-4`}>
-            <PortfolioValue
-              totalValue={activePortfolio.total_value}
-              pnlPercentage={activePortfolio.pnl_percentage}
-              positions={activePositions}
-            />
-          </div>
-
-          {/* 4. Portfolio Performance Card */}
-          <div className={` md:col-span-4`}>
-            <PortfolioPerformance positions={activePositions} />
-          </div>
-
-          {/* 9. Quick Stats Card */}
-          <div className={` md:col-span-4`}>
-            <QuickStats portfolio={activePortfolio} />
-          </div>
+        {/* Main Unified Card */}
+        <div className="w-full">
+          <UnifiedWalletCard
+            totalValue={activePortfolio.total_value}
+            pnlPercentage={activePortfolio.pnl_percentage}
+            positions={activePositions}
+            chartData={chartData}
+          />
         </div>
 
-        {/* Second Row - Charts (EXACT SAME AS PORTFOLIO CARD) */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-          <div className={` md:col-span-4`}>
-            <PortfolioMetrics 
-              portfolio={activePortfolio} 
-              positions={activePositions} 
-            />
-          </div>
-          {/* 5. Asset Allocation Card */}
-          <div className={` md:col-span-4`}>
-            <AssetAllocation 
-              positions={activePositions} 
-              totalValue={activePortfolio.total_value} 
-            />
-          </div>
-          <div className={` md:col-span-4`}>
-            <TopMovers positions={activePositions} />
-          </div>
+        {/* Minimal Footer */}
+        <div className="text-center pb-4 space-y-1">
+          <p className="text-xs text-gray-500">
+            {showLiveData ? (
+              <>Live data • Updated just now</>
+            ) : (
+              <>
+                Verified on {new Date(committedData.committed_at).toLocaleDateString('en-US', { 
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })} at {new Date(committedData.committed_at).toLocaleTimeString('en-US', { 
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </>
+            )}
+          </p>
+          <p className="text-xs text-gray-400">
+            Powered by FlexAnon • Zero-Knowledge Portfolio Sharing
+          </p>
         </div>
-
-        {/* Third Row - Assets (EXACT SAME AS PORTFOLIO CARD) */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-          {/* 3. Top Assets Card (Table) */}
-          <div className={` md:col-span-12`}>
-            <TopAssetsList positions={activePositions} />
-          </div>
-        </div>
-
-        {/* Footer (EXACT SAME AS PORTFOLIO CARD) */}
-        {(committedPortfolio?.snapshot_timestamp || committedData?.committed_at) && (
-          <div className="text-center py-4 space-y-2">
-            <p className="text-xs text-gray-900">
-              {showLiveData ? (
-                <>Live data fetched just now</>
-              ) : (
-                <>
-                  Committed on-chain: {new Date(committedData.committed_at).toLocaleString(undefined, { 
-                    hour12: true,
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })} ({dataAge.ageText})
-                </>
-              )}
-            </p>
-          </div>
-        )}
 
       </div>
     </div>
