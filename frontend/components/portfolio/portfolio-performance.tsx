@@ -29,20 +29,20 @@ export default function PortfolioPerformance({ positions = [] }: PortfolioPerfor
           <Badge 
             variant="secondary"
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl
-              ${isPositive ? 'bg-blue-50 hover:bg-blue-100' : 'bg-red-50 hover:bg-red-100'}`}
+              ${isPositive ? 'bg-[#004aad]/10 hover:bg-[#004aad]/20' : 'bg-red-50 hover:bg-red-100'}`}
           >
             {isPositive ? (
-              <TrendingUp className={`w-6 h-6 ${isPositive ? 'text-blue-600' : 'text-red-600'}`} />
+              <TrendingUp className={`w-6 h-6 ${isPositive ? 'text-[#004aad]' : 'text-red-600'}`} />
             ) : (
-              <TrendingDown className={`w-6 h-6 ${isPositive ? 'text-blue-600' : 'text-red-600'}`} />
+              <TrendingDown className={`w-6 h-6 ${isPositive ? 'text-[#004aad]' : 'text-red-600'}`} />
             )}
-            <span className={`text-3xl font-bold ${isPositive ? 'text-blue-700' : 'text-red-700'}`}>
+            <span className={`text-3xl font-bold ${isPositive ? 'text-[#004aad]' : 'text-red-700'}`}>
               {isPositive ? '+' : ''}{(percentChange * 100).toFixed(2)}%
             </span>
           </Badge>
 
           {/* Subtitle */}
-          <p className={`text-sm font-medium ${isPositive ? 'text-blue-600' : 'text-red-600'}`}>
+          <p className={`text-sm font-medium ${isPositive ? 'text-[#004aad]' : 'text-red-600'}`}>
             {isPositive ? '+' : ''}${absoluteChange.toFixed(2)} today
           </p>
         </div>
@@ -51,7 +51,7 @@ export default function PortfolioPerformance({ positions = [] }: PortfolioPerfor
         <div className="pt-3 border-t border-gray-100">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-500">Status</span>
-            <span className={`font-semibold ${isPositive ? 'text-blue-600' : 'text-red-600'}`}>
+            <span className={`font-semibold ${isPositive ? 'text-[#004aad]' : 'text-red-600'}`}>
               {isPositive ? 'Gaining' : 'Declining'}
             </span>
           </div>
