@@ -87,7 +87,7 @@ export interface UnifiedWalletCardProps {
   onFilter?: () => void
   onScreenshot?: () => void
   onPeriodChange?: (period: TimePeriod) => void
-  isSharedView: boolean
+  isSharedView?: boolean
 }
 
 // ============================================================================
