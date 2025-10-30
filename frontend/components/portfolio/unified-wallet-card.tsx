@@ -557,7 +557,7 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
     <div 
       className={`rounded-2xl p-3 transition-all h-fit ${
         asset.isLargeCard 
-          ? 'col-span-2 bg-gradient-to-br from-purple-500 to-purple-600 text-white' 
+          ? 'col-span-2 bg-[#252525] text-white' 
           : 'bg-[#252525]'
       }`}
     >
