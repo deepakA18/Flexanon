@@ -36,6 +36,7 @@ router.post('/generate', async (req: Request, res: Response) => {
       commitment_version,
       chain = 'solana',
       reveal_preferences,
+      chart_data, // NEW: Chart data from frontend
     } = req.body;
 
     // Validate required fields
@@ -170,6 +171,20 @@ router.post('/generate', async (req: Request, res: Response) => {
 
     console.log(`✅ Portfolio fetched: ${portfolio.assets.length} assets, $${portfolio.total_value}`);
 
+    // NEW: Fetch chart data if not provided
+    let chartDataToStore = chart_data;
+    if (!chartDataToStore) {
+      console.log(`📈 Fetching chart data from Zerion...`);
+      try {
+        chartDataToStore = await zerionClient.getChartData(wallet_address, 'day');
+        console.log(`✅ Chart data fetched`);
+      } catch (error) {
+        console.warn('⚠️  Could not fetch chart data:', error);
+        // Chart is optional, continue without it
+        chartDataToStore = null;
+      }
+    }
+
     // 5. Build Merkle leaves from portfolio
     const allLeaves = buildPortfolioLeaves(portfolio, wallet_address);
     console.log(`🌳 Built ${allLeaves.length} Merkle leaves`);
@@ -204,13 +219,14 @@ router.post('/generate', async (req: Request, res: Response) => {
       ...smt.getProof(leaf.key)
     }));
 
-    // 10. Create share token in database
+    // 10. Create share token in database (NOW WITH CHART DATA)
     const shareToken = await createShareToken({
       walletAddress: wallet_address,
       commitmentAddress: commitment_address,
       commitmentVersion: commitment_version,
       revealedLeaves: revealed,
       proofData,
+      chartData: chartDataToStore, // NEW: Pass chart data
       metadata: {
         chain,
         total_leaves_count: allLeaves.length,
@@ -265,7 +281,7 @@ router.get('/resolve', async (req: Request, res: Response) => {
     const userAgent = req.headers['user-agent'];
     await trackShareView(token, viewerIp, userAgent);
 
-    // Resolve token to public data (includes on-chain verification)
+    // Resolve token to public data (includes on-chain verification and chart data)
     const publicData = await resolveShareToken(token);
 
     if (!publicData) {

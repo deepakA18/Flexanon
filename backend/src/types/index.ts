@@ -2,7 +2,7 @@
 
 export interface WalletAuth {
   address: string;
-  chain: 'solana' | 'ethereum' | 'polygon' | 'base';
+  chain: 'solana';
   signature: string;
   message: string;
   timestamp: number;
@@ -61,6 +61,7 @@ export interface ShareToken {
   commitment_version: number;      // Version at creation
   revealed_leaves: MerkleLeaf[];
   proof_data: MerkleProof[];
+  chart_data?: any;                // NEW: Chart data from Zerion
   metadata?: any;
   revoked: boolean;                // Off-chain revocation
   created_at: Date;
@@ -77,8 +78,12 @@ export interface PublicShareData {
       symbol: string;
       amount: string;
       value_usd: string;
+      icon_url?: string;
+      name?: string;
+      change_24h?: string;
     }>;
     snapshot_time: string;
+    chart_data?: any;              // NEW: Chart data for portfolio visualization
   };
   proof_data: MerkleProof[];
   verification_status: 'valid' | 'invalid' | 'unknown';
@@ -102,6 +107,7 @@ export interface GenerateShareRequest {
   commitment_version: number;      // Current version
   chain: string;
   reveal_preferences: RevealPreferences;
+  chart_data?: any;                // NEW: Optional chart data from frontend
 }
 
 export interface GenerateShareResponse {

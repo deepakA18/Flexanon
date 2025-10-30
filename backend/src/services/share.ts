@@ -7,7 +7,7 @@ import { PublicKey } from '@solana/web3.js';
 
 /**
  * Share token service - handles storage and retrieval of share links
- * Now integrated with on-chain Solana commitments
+ * Now integrated with on-chain Solana commitments and chart data
  */
 
 export interface CreateShareTokenParams {
@@ -16,6 +16,7 @@ export interface CreateShareTokenParams {
   commitmentVersion: number;
   revealedLeaves: MerkleLeaf[];
   proofData: MerkleProof[];
+  chartData?: any; // NEW: Chart data parameter
   metadata?: any;
 }
 
@@ -29,6 +30,7 @@ export async function createShareToken(params: CreateShareTokenParams): Promise<
     commitmentVersion,
     revealedLeaves,
     proofData,
+    chartData, // NEW: Extract chart data
     metadata = {}
   } = params;
 
@@ -64,11 +66,11 @@ export async function createShareToken(params: CreateShareTokenParams): Promise<
     }
   } while (attempts < maxAttempts);
 
-  // Insert into database
+  // Insert into database (NOW WITH CHART DATA)
   const result = await query(
     `INSERT INTO share_tokens 
-      (token_id, owner_address, commitment_address, commitment_version, revealed_leaves, proof_data, metadata, revoked)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      (token_id, owner_address, commitment_address, commitment_version, revealed_leaves, proof_data, chart_data, metadata, revoked)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING *`,
     [
       tokenId,
@@ -77,6 +79,7 @@ export async function createShareToken(params: CreateShareTokenParams): Promise<
       commitmentVersion,
       JSON.stringify(revealedLeaves),
       JSON.stringify(proofData),
+      chartData ? JSON.stringify(chartData) : null, // NEW: Store chart data
       JSON.stringify(metadata),
       false
     ]
@@ -91,6 +94,9 @@ export async function createShareToken(params: CreateShareTokenParams): Promise<
     proof_data: typeof row.proof_data === 'string'
       ? JSON.parse(row.proof_data)
       : row.proof_data,
+    chart_data: row.chart_data && typeof row.chart_data === 'string' // NEW: Parse chart data
+      ? JSON.parse(row.chart_data)
+      : row.chart_data,
     metadata: typeof row.metadata === 'string'
       ? JSON.parse(row.metadata)
       : row.metadata
@@ -120,6 +126,9 @@ export async function getShareToken(tokenId: string): Promise<ShareToken | null>
     proof_data: typeof row.proof_data === 'string'
       ? JSON.parse(row.proof_data)
       : row.proof_data,
+    chart_data: row.chart_data && typeof row.chart_data === 'string' // NEW: Parse chart data
+      ? JSON.parse(row.chart_data)
+      : row.chart_data,
     metadata: typeof row.metadata === 'string'
       ? JSON.parse(row.metadata)
       : row.metadata
@@ -173,7 +182,10 @@ export async function resolveShareToken(tokenId: string): Promise<PublicShareDat
   return {
     token_id: token.token_id,
     committed_at: new Date(commitment.timestamp * 1000).toISOString(),
-    revealed_data: revealedData,
+    revealed_data: {
+      ...revealedData,
+      chart_data: token.chart_data || null // NEW: Include chart data in response
+    },
     proof_data: token.proof_data,
     verification_status: 'valid',
     on_chain_status: {
@@ -223,6 +235,9 @@ export async function getWalletShareTokens(walletAddress: string): Promise<Share
     proof_data: typeof row.proof_data === 'string'
       ? JSON.parse(row.proof_data)
       : row.proof_data,
+    chart_data: row.chart_data && typeof row.chart_data === 'string' // NEW: Parse chart data
+      ? JSON.parse(row.chart_data)
+      : row.chart_data,
     metadata: typeof row.metadata === 'string'
       ? JSON.parse(row.metadata)
       : row.metadata
