@@ -330,15 +330,15 @@ export default function UnifiedWalletCard({
   }
 
   return (
-    <div ref={cardRef} className="relative rounded-[4rem] overflow-visible shadow-2xl">
+    <div ref={cardRef} className="relative rounded-2xl md:rounded-[4rem] overflow-visible shadow-2xl max-w-full">
       {/* Base Layer - Black Panel (Full Width) */}
-      <div className="bg-[#1a1a1a] rounded-[4rem]">
+      <div className="bg-[#1a1a1a] rounded-2xl md:rounded-[4rem]">
         <div className="grid grid-cols-1 lg:grid-cols-12">
           {/* Left placeholder for blue overlay */}
-          <div className="lg:col-span-8 h-full min-h-[900px]"></div>
+          <div className="hidden lg:block lg:col-span-8 h-full min-h-[900px]"></div>
           
           {/* Right Side - Dark Panel */}
-          <div className="lg:col-span-4 text-white p-6">
+          <div className="lg:col-span-4 text-white p-4 md:p-6">
             <div className="h-full flex flex-col">
               {/* Asset Allocation Pie Chart */}
               <AssetAllocationSection positions={positions} totalValue={totalValue} />
@@ -351,29 +351,29 @@ export default function UnifiedWalletCard({
       </div>
 
       {/* Overlay Layer - Blue Card */}
-      <div className="absolute top-0  h-full  left-0 lg:w-[66.666667%] w-full">
-        <div className="bg-[#004aad] h-full text-white rounded-tl-[4rem] rounded-tr-4xl rounded-[4rem] lg:rounded-tr-[4rem] lg:rounded-br-[4rem] rounded-bl-[4rem]">
-          <div className="p-8">
+      <div className="static lg:absolute top-0 h-full left-0 lg:w-[66.666667%] w-full">
+        <div className="bg-[#004aad] h-full text-white rounded-2xl md:rounded-[4rem] lg:rounded-tr-[4rem] lg:rounded-br-[4rem]">
+          <div className="p-4 md:p-6 lg:p-8">
             {/* Header Section */}
-            <div className="flex items-start justify-between mb-8">
-              <div className="space-y-6">
+            <div className="flex items-start justify-between mb-4 md:mb-8">
+              <div className="space-y-3 md:space-y-6">
                 <div className='flex flex-col items-start'>
-                  <Image src={logoAbstract} alt='logo' height={90} width={90} />
+                    <Image src={logoAbstract} alt='logo' height={60} width={60} className="md:h-[90px] md:w-[90px]" />
                 </div>
 
                 <div>
-                  <h1 className="text-7xl font-bold mb-2">
+                  <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-2">
                     ${formatCurrency(totalValue)}
                   </h1>
 
                   <Badge
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 text-base font-semibold border-0 ${
+                    className={`inline-flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 text-sm md:text-base font-semibold border-0 ${
                       isPositive
                         ? 'bg-green-500/20 text-green-300'
                         : 'bg-red-500/20 text-red-300'
                     }`}
                   >
-                    <span className="text-xl">⊙</span>
+                    <span className="text-lg md:text-xl">⊙</span>
                     {formatPercentage(pnlPercentage * 100)}
                   </Badge>
                 </div>
@@ -414,11 +414,11 @@ export default function UnifiedWalletCard({
             </div>
 
             {/* Metrics Row */}
-            <div className="grid grid-cols-3 gap-6 mb-8 ">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-8">
               {/* Total Value */}
-              <div className='bg-white/10 rounded-2xl p-5 px-7'>
-                <p className="text-white text-sm mb-1">Total Value</p>
-                <p className="text-2xl font-bold">
+              <div className='bg-white/10 rounded-xl md:rounded-2xl p-3 md:p-5 md:px-7'>
+                <p className="text-white text-xs md:text-sm mb-1">Total Value</p>
+                <p className="text-xl md:text-2xl font-bold">
                   ${formatCurrency(metrics.totalValue)}
                 </p>
                 <p className={`text-xs mt-1 ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
@@ -427,9 +427,9 @@ export default function UnifiedWalletCard({
               </div>
 
               {/* 24h Change */}
-              <div className='bg-white/10 rounded-2xl p-5 px-7'>
-                <p className="text-white text-sm mb-1">24h Change</p>
-                <p className="text-2xl font-bold">
+              <div className='bg-white/10 rounded-xl md:rounded-2xl p-3 md:p-5 md:px-7'>
+                <p className="text-white text-xs md:text-sm mb-1">24h Change</p>
+                <p className="text-xl md:text-2xl font-bold">
                   {metrics.netChange >= 0 ? '+' : ''}${formatCurrency(Math.abs(metrics.netChange))}
                 </p>
                 <p className={`text-xs mt-1 ${metrics.netChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -438,9 +438,9 @@ export default function UnifiedWalletCard({
               </div>
 
               {/* Asset Count */}
-              <div className='bg-white/10 rounded-2xl p-5 px-7'>
-                <p className="text-white text-sm mb-1">Assets</p>
-                <p className="text-2xl font-bold">
+              <div className='bg-white/10 rounded-xl md:rounded-2xl p-3 md:p-5 md:px-7'>
+                <p className="text-white text-xs md:text-sm mb-1">Assets</p>
+                <p className="text-xl md:text-2xl font-bold">
                   {positions.length}
                 </p>
                 <p className="text-white/40 text-xs mt-1">
@@ -450,7 +450,7 @@ export default function UnifiedWalletCard({
             </div>
 
             {/* Time Period Selector */}
-            <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="flex items-center justify-center gap-1 md:gap-3 mb-4 md:mb-6 overflow-x-auto">
               {periods.map((period) => (
                 <Button
                   key={period}
@@ -458,7 +458,7 @@ export default function UnifiedWalletCard({
                   size="sm"
                   onClick={() => handlePeriodClick(period)}
                   disabled={isLoadingChart}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                     selectedPeriod === period
                       ? 'bg-white/20 text-white'
                       : 'bg-transparent text-white/60 hover:bg-white/10 hover:text-white'
@@ -490,10 +490,10 @@ interface ChartSectionProps {
 const ChartSection: React.FC<ChartSectionProps> = ({ data, isLoading = false }) => {
   if (isLoading) {
     return (
-      <div className="h-[400px] flex items-center justify-center">
+      <div className="h-[250px] md:h-[400px] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white" />
-          <p className="text-white/60">Loading chart data...</p>
+          <div className="animate-spin rounded-full h-8 w-8 md:h-12 md:w-12 border-b-2 border-white" />
+          <p className="text-white/60 text-sm md:text-base">Loading chart data...</p>
         </div>
       </div>
     )
@@ -501,14 +501,14 @@ const ChartSection: React.FC<ChartSectionProps> = ({ data, isLoading = false }) 
 
   if (data.length === 0) {
     return (
-      <div className="h-[400px] flex items-center justify-center text-white/60">
-        <p>No chart data available</p>
+      <div className="h-[250px] md:h-[400px] flex items-center justify-center text-white/60">
+        <p className="text-sm md:text-base">No chart data available</p>
       </div>
     )
   }
 
   return (
-    <div className="h-[500px] relative  w-full">
+    <div className="h-[300px] md:h-[500px] relative w-full">
       {/* Bar chart background effect */}
       <div className="absolute inset-0 opacity-30">
         <div className="flex items-end justify-between h-full px-2 gap-1">
@@ -596,17 +596,17 @@ const PeakIndicator: React.FC<PeakIndicatorProps> = ({ data }) => {
   return (
     <>
       <div 
-        className="absolute bg-white rounded-full p-2 shadow-lg"
+        className="absolute bg-white rounded-full p-1.5 md:p-2 shadow-lg"
         style={{ top: '20%', right: '35%' }}
       >
-        <div className="w-3 h-3 rounded-full  bg-[#004aad]" />
+        <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-[#004aad]" />
       </div>
       <div 
-        className="absolute bg-white px-3 py-1.5 rounded-lg shadow-lg text-[#004aad] font-bold text-sm"
+        className="absolute bg-white px-2 py-1 md:px-3 md:py-1.5 rounded-lg shadow-lg text-[#004aad] font-bold text-xs md:text-sm"
         style={{ top: '15%', right: '30%' }}
       >
         {peakChange >= 0 ? '+' : ''}${formatCurrency(peakChange)}
-        <div className="text-xs font-normal">
+        <div className="text-[10px] md:text-xs font-normal">
           ⊙ {formatPercentage(peakPercentage)}
         </div>
       </div>
@@ -635,21 +635,23 @@ const TopAssetsSection: React.FC<TopAssetsSectionProps> = ({ assets }) => {
   if (assets.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-gray-400">
-        <p>No assets found</p>
+        <p className="text-sm md:text-base">No assets found</p>
       </div>
     )
   }
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between mb-4">
-        <h4 className="text-lg font-semibold">Top Assets</h4>
+      <div className="flex items-center justify-between mb-3 md:mb-4">
+        <h4 className="text-base md:text-lg font-semibold">Top Assets</h4>
+       
       </div>
 
       <div className="grid grid-cols-2 gap-2 overflow-y-auto flex-1 pr-2">
         {assets.map((asset, idx) => (
-          <ScrollArea key={`${asset.symbol}-${idx}`} className="h-full max-h-[320px] pr-2">
-            <AssetCard  asset={asset} />
+          <ScrollArea key={`${asset.symbol}-${idx}`} className="h-full max-h-[280px] md:max-h-[320px] pr-2">
+
+          <AssetCard  asset={asset} />
           </ScrollArea>
         ))}
       </div>
@@ -666,14 +668,14 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
   
   return (
     <div 
-      className={`rounded-2xl p-3 transition-all h-fit ${
+      className={`rounded-xl md:rounded-2xl p-2.5 md:p-3 transition-all h-fit ${
         asset.isLargeCard 
           ? ' bg-[#252525] text-white' 
           : 'bg-[#252525]'
       }`}
     >
       <div className="flex items-center gap-2 mb-2">
-        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
           {asset.icon.startsWith('http') ? (
             <Image 
               height={50} 
@@ -683,17 +685,17 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
               className="w-full h-full object-cover" 
             />
           ) : (
-            <span className="text-lg">{asset.icon}</span>
+            <span className="text-base md:text-lg">{asset.icon}</span>
           )}
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-bold">{asset.symbol}</p>
-          <p className="text-[10px] text-gray-400 truncate">{asset.name}</p>
+          <p className="text-xs md:text-sm font-bold">{asset.symbol}</p>
+          <p className="text-[9px] md:text-[10px] text-gray-400 truncate">{asset.name}</p>
         </div>
       </div>
 
       <div className="space-y-0.5">
-        <p className="text-xl font-bold">
+        <p className="text-lg md:text-xl font-bold">
           {asset.amount > 0.01 
             ? asset.amount.toFixed(2) 
             : asset.amount.toFixed(3)}
