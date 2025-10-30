@@ -137,13 +137,7 @@ export default function PlanStatusCard({ data }: { data: PlanData }) {
                             <div className="h-px bg-gray-200 my-2" />
 
                             {/* Expiry Date */}
-                            <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4 text-gray-600" />
-                                    <span className="text-xs font-medium text-gray-600">Expires on</span>
-                                </div>
-                                <span className="text-xs font-semibold text-gray-900">{expiresDate}</span>
-                            </div>
+                           
                         </div>
                     </div>
                 </TooltipContent>

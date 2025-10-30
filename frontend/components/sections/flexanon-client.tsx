@@ -54,7 +54,7 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
     if (!walletAddress) return
     try {
       const data = await fetchWalletPositions(apiBase, walletAddress);
-      console.log(data);
+  
       setPositions(data?.positions ?? data?.fungible_positions ?? [])
     } catch (e) {
       console.error('fetchWalletPositions error:', e)
@@ -239,7 +239,7 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
       if (!commitmentResult?.commitmentAddress) {
         throw new Error('Failed to get commitment address')
       }
-      console.log(commitmentResult)
+
       const { commitmentAddress, commitmentVersion, transactionSignature } = commitmentResult
 
       setShareStatus('Signing ownership...')

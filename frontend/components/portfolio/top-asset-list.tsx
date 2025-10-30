@@ -54,7 +54,7 @@ export default function TopAssetsList({ positions = [] }: TopAssetsListProps) {
                 {positions.map((position, index) => {
                   const change = position.changes?.percent_1d || 0
                   const isPositive = change >= 0
-                  console.log(position)
+              
                   return (
                     <TableRow key={position.symbol + index}>
                       {/* Asset */}
