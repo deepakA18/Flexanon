@@ -51,7 +51,7 @@ export default function ShareModal({
             className="w-full max-w-lg"
             onClick={(e) => e?.stopPropagation?.()}
           >
-            <Card className="bg-white relative">
+            <Card className="bg-white relative rounded-4xl border-none">
               {/* Close Button */}
               <button
                 onClick={onClose}
