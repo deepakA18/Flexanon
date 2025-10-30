@@ -25,7 +25,7 @@ interface TopAssetsListProps {
 
 export default function TopAssetsList({ positions = [] }: TopAssetsListProps) {
   return (
-    <Card className='bg-white'>
+    <Card className='bg-white text-primary'>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 ">
           <List className="w-4 h-4" />
@@ -39,22 +39,22 @@ export default function TopAssetsList({ positions = [] }: TopAssetsListProps) {
             No assets found
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto text-primary">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="text-left">Asset</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Value</TableHead>
-                  <TableHead className="text-right">24h</TableHead>
+                <TableRow className='text-primary'>
+                  <TableHead className="text-left text-primary">Asset</TableHead>
+                  <TableHead className="text-right text-primary">Amount</TableHead>
+                  <TableHead className="text-right text-primary">Price</TableHead>
+                  <TableHead className="text-right text-primary">Value</TableHead>
+                  <TableHead className="text-right text-primary">24h</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {positions.map((position, index) => {
                   const change = position.changes?.percent_1d || 0
                   const isPositive = change >= 0
-
+                  console.log(position)
                   return (
                     <TableRow key={position.symbol + index}>
                       {/* Asset */}
@@ -110,7 +110,7 @@ export default function TopAssetsList({ positions = [] }: TopAssetsListProps) {
                             <TrendingDown className="w-3 h-3" />
                           )}
                           <span className="text-xs font-semibold">
-                            {isPositive ? '+' : ''}{(change * 100).toFixed(2)}%
+                            {isPositive ? '+' : ''}{(change).toFixed(2)}%
                           </span>
                         </Badge>
                       </TableCell>

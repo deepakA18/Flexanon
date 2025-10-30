@@ -53,7 +53,8 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
   const fetchWalletPositionsData = useCallback(async () => {
     if (!walletAddress) return
     try {
-      const data = await fetchWalletPositions(apiBase, walletAddress)
+      const data = await fetchWalletPositions(apiBase, walletAddress);
+      console.log(data);
       setPositions(data?.positions ?? data?.fungible_positions ?? [])
     } catch (e) {
       console.error('fetchWalletPositions error:', e)

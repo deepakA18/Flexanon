@@ -49,7 +49,7 @@ export default function PortfolioCard({
               disabled={refreshing}
               variant="outline"
               size="lg"
-              className="bg-white cursor-pointer font-bold hover:bg-gray-50 gap-2 border-gray-200 transition-all duration-300 disabled:opacity-50"
+              className="bg-white text-primary cursor-pointer font-bold hover:bg-gray-50 gap-2 border-gray-200 transition-all duration-300 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
               {refreshing ? 'Refreshing...' : 'Refresh'}

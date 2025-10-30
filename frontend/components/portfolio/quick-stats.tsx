@@ -51,7 +51,7 @@ export default function QuickStats({ portfolio }: QuickStatsProps) {
           </div>
           <div className={`text-xl font-bold
             ${isPositive ? 'text-primary' : 'text-red-900'}`}>
-            {isPositive ? '+' : ''}{(pnlPercentage * 100).toFixed(2)}%
+            {isPositive ? '+' : ''}{(pnlPercentage).toFixed(2)}%
           </div>
         </div>
 

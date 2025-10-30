@@ -80,7 +80,7 @@ export default function TopMovers({ positions = [] }: TopMoversProps) {
                       <TrendingDown className="w-4 h-4" />
                     )}
                     <span className="text-sm font-bold">
-                      {isPositive ? '+' : ''}{(change * 100).toFixed(2)}%
+                      {isPositive ? '+' : ''}{(change).toFixed(2)}%
                     </span>
                   </Badge>
                 </div>
