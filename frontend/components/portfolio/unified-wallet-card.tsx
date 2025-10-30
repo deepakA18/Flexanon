@@ -536,9 +536,9 @@ const TopAssetsSection: React.FC<TopAssetsSectionProps> = ({ assets }) => {
 
       <div className="grid grid-cols-2 gap-2 overflow-y-auto flex-1 pr-2">
         {assets.map((asset, idx) => (
-          <ScrollArea className="h-full max-h-[320px] pr-2">
+          <ScrollArea key={`${asset.symbol}-${idx}`} className="h-full max-h-[320px] pr-2">
 
-          <AssetCard key={`${asset.symbol}-${idx}`} asset={asset} />
+          <AssetCard  asset={asset} />
           </ScrollArea>
         ))}
       </div>
@@ -564,7 +564,7 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
       <div className="flex items-center gap-2 mb-2">
         <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
           {asset.icon.startsWith('http') ? (
-            <img 
+            <Image 
               src={asset.icon} 
               alt={asset.symbol} 
               className="w-full h-full object-cover" 
