@@ -246,7 +246,7 @@ export default function ShareablePortfolio({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
-      <div className="max-w-[1800px] mx-auto space-y-6">
+      <div className="container mx-auto space-y-6">
 
         {/* Compact Verification Badge */}
         {!showLiveData && (
