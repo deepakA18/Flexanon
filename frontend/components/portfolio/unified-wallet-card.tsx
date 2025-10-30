@@ -529,9 +529,7 @@ const TopAssetsSection: React.FC<TopAssetsSectionProps> = ({ assets }) => {
     <div className="flex-1 overflow-hidden flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-lg font-semibold">Top Assets</h4>
-        <button className="text-sm text-gray-400 hover:text-white transition-colors">
-          View All
-        </button>
+       
       </div>
 
       <div className="grid grid-cols-2 gap-2 overflow-y-auto flex-1 pr-2">
@@ -598,7 +596,7 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
         </div>
       </div>
 
-      {asset.isLargeCard && <MiniChart />}
+
     </div>
   )
 }
