@@ -68,10 +68,9 @@ FlexAnon provides **Data disclosure with cryptographic proof**:
 
 FlexAnon uses a hybrid architecture combining on-chain security with off-chain performance:
 
-```
+
 ![Architecture Diagram](./docs/flexanon_arc.png)
 
-```
 
 ### Components
 
