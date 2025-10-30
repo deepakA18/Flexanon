@@ -425,4 +425,4 @@ This project is licensed under the MIT License.
 
 - **Website**: [flexanon.vercel.app](https://flexanon.vercel.app)
 - **Documentation**: [docs.flexanon.xyz](https://github.com/deepakA18/Flexanon/wiki)
-- **Twitter**: [@FlexAnon](https://x.com.com/flexAnon)
+- **Twitter**: [@FlexAnon](https://x.com/flexAnon)
