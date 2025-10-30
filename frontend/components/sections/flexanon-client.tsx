@@ -15,6 +15,23 @@ import { Button } from '@/components/ui/button'
 
 interface Props { apiBase?: string }
 
+// Type for period selection
+export type TimePeriod = '1h' | '8h' | '1d' | '1w' | '1m' | '6m' | '1y'
+
+// Map UI period to API format
+const mapPeriodToAPI = (period: TimePeriod): string => {
+  const periodMap: Record<TimePeriod, string> = {
+    '1h': 'hour',
+    '8h': '8hour',
+    '1d': 'day',
+    '1w': 'week',
+    '1m': 'month',
+    '6m': '6month',
+    '1y': 'year'
+  }
+  return periodMap[period] || 'day'
+}
+
 export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://flexanon-delta.vercel.app/api' }: Props) {
   const { connected, publicKey, signMessage } = useWallet()
   const router = useRouter()
@@ -26,10 +43,12 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null)
   const [loading, setLoading] = useState(false)
   const [portfolioLoading, setPortfolioLoading] = useState(false)
+  const [chartLoading, setChartLoading] = useState(false) // NEW: Separate loading state for chart
   const [refreshing, setRefreshing] = useState(false)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareStatus, setShareStatus] = useState('')
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('1d') // NEW: Track selected period
 
   const fetchWalletPositionsData = useCallback(async () => {
     if (!walletAddress) return
@@ -42,14 +61,21 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
     }
   }, [walletAddress, apiBase])
 
-  const fetchWalletChartData = useCallback(async () => {
+  // UPDATED: Accept period parameter
+  const fetchWalletChartData = useCallback(async (period: TimePeriod = '1d') => {
     if (!walletAddress) return
+    
+    setChartLoading(true) // NEW: Set loading state
     try {
-      const data = await fetchWalletChart(apiBase, walletAddress, 'day')
+      const apiPeriod = mapPeriodToAPI(period)
+      const data = await fetchWalletChart(apiBase, walletAddress, apiPeriod)
       setChartData(data)
     } catch (e) {
       console.error('fetchWalletChart error:', e)
       toast?.error?.('Failed to fetch wallet chart')
+      setChartData(null) // Clear chart on error
+    } finally {
+      setChartLoading(false) // NEW: Clear loading state
     }
   }, [walletAddress, apiBase])
 
@@ -87,7 +113,8 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
           quantity: a?.quantity != null ? String(a.quantity) : '0',
           price: a?.price ?? undefined,
           value: a?.value ?? undefined,
-          icon_url: a?.icon_url ?? undefined
+          icon_url: a?.icon_url ?? undefined,
+          changes: a?.changes ?? undefined // Include changes for 24h data
         })),
         snapshot_timestamp: data?.snapshot_timestamp ?? undefined
       }
@@ -110,6 +137,12 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
       console.error('trackUpdate error:', e)
     }
   }, [walletAddress, apiBase, fetchSubscription, router])
+
+  // NEW: Handle period change
+  const handlePeriodChange = useCallback(async (period: TimePeriod) => {
+    setSelectedPeriod(period)
+    await fetchWalletChartData(period)
+  }, [fetchWalletChartData])
 
   const buildAndSign = async (data: any[]) => {
     // Safety checks
@@ -174,98 +207,90 @@ export default function FlexAnonClient({ apiBase = process.env.NEXT_PUBLIC_BACKE
     }
   }
 
-const handleGenerateShareLink = async () => {
-  if (!walletAddress || !signMessage) {
-    toast?.error?.('Wallet not ready')
-    return
-  }
-
-  setLoading(true)
-  setShareStatus('')
-
-  try {
-    setShareStatus('Fetching portfolio data...')
-    const current = await fetchPortfolio?.(apiBase, walletAddress)
-
-    // Get portfolio data safely
-    const portfolioData = Array.isArray(current?.assets) ? current.assets : []
-
-    if (portfolioData.length === 0) {
-      toast?.error?.('No assets found to share')
-      setLoading(false)
+  const handleGenerateShareLink = async () => {
+    if (!walletAddress || !signMessage) {
+      toast?.error?.('Wallet not ready')
       return
     }
 
-    setShareStatus('Building verification...')
-    const { root, signature, message, timestamp } = await buildAndSign(portfolioData)
-
-    setShareStatus('Submitting commitment...')
-    const commitmentResult = await submitCommitment?.(apiBase, walletAddress, root, signature, message, timestamp)
-
-    if (!commitmentResult?.commitmentAddress) {
-      throw new Error('Failed to get commitment address')
-    }
-    console.log(commitmentResult);
-    const { commitmentAddress, commitmentVersion, transactionSignature } = commitmentResult
-
-    // Show transaction signature toast if available
-    
-
-    setShareStatus('Signing ownership...')
-    const linkMsg = `FlexAnon Ownership Verification\n\nI am the owner of wallet: ${walletAddress}\nTimestamp: ${timestamp}`
-    const linkSigRaw = await signMessage(new TextEncoder().encode(linkMsg))
-
-    if (!linkSigRaw) {
-      throw new Error('Ownership signing failed')
-    }
-
-    const linkSig = base58Encode(linkSigRaw)
-    if (!linkSig) {
-      throw new Error('Failed to encode ownership signature')
-    }
-
-    setShareStatus('Generating share link...')
-    const url = await generateShareLink?.(apiBase, walletAddress, linkSig, linkMsg, timestamp, commitmentAddress, commitmentVersion)
-
-    if (!url) {
-      throw new Error('Failed to generate share URL')
-    }
-
-    await trackUpdate?.()
-    setShareUrl(url)
-    if (transactionSignature) {
-      toast?.success?.(
-        `Commitment verified on-chain!`,
-        {
-          description: `Transaction: ${transactionSignature.slice(0, 8)}...${transactionSignature.slice(-8)}`,
-          action: {
-            label: 'View on Solscan',
-            onClick: () => window.open(`https://solscan.io/tx/${transactionSignature}?cluster=devnet`, '_blank')
-          },
-         
-        }
-      )
-    }
-
-
-  } catch (e: any) {
-    console.error('handleGenerateShareLink error:', e)
-    const errorMessage = e?.message || 'Failed to generate share link'
-    toast?.error?.(errorMessage)
-  } finally {
+    setLoading(true)
     setShareStatus('')
-    setLoading(false)
+
+    try {
+      setShareStatus('Fetching portfolio data...')
+      const current = await fetchPortfolio?.(apiBase, walletAddress)
+
+      // Get portfolio data safely
+      const portfolioData = Array.isArray(current?.assets) ? current.assets : []
+
+      if (portfolioData.length === 0) {
+        toast?.error?.('No assets found to share')
+        setLoading(false)
+        return
+      }
+
+      setShareStatus('Building verification...')
+      const { root, signature, message, timestamp } = await buildAndSign(portfolioData)
+
+      setShareStatus('Submitting commitment...')
+      const commitmentResult = await submitCommitment?.(apiBase, walletAddress, root, signature, message, timestamp)
+
+      if (!commitmentResult?.commitmentAddress) {
+        throw new Error('Failed to get commitment address')
+      }
+      console.log(commitmentResult)
+      const { commitmentAddress, commitmentVersion, transactionSignature } = commitmentResult
+
+      setShareStatus('Signing ownership...')
+      const linkMsg = `FlexAnon Ownership Verification\n\nI am the owner of wallet: ${walletAddress}\nTimestamp: ${timestamp}`
+      const linkSigRaw = await signMessage(new TextEncoder().encode(linkMsg))
+
+      if (!linkSigRaw) {
+        throw new Error('Ownership signing failed')
+      }
+
+      const linkSig = base58Encode(linkSigRaw)
+      if (!linkSig) {
+        throw new Error('Failed to encode ownership signature')
+      }
+
+      setShareStatus('Generating share link...')
+      const url = await generateShareLink?.(apiBase, walletAddress, linkSig, linkMsg, timestamp, commitmentAddress, commitmentVersion)
+
+      if (!url) {
+        throw new Error('Failed to generate share URL')
+      }
+
+      await trackUpdate?.()
+      setShareUrl(url)
+      if (transactionSignature) {
+        toast?.success?.(
+          `Commitment verified on-chain!`,
+          {
+            description: `Transaction: ${transactionSignature.slice(0, 8)}...${transactionSignature.slice(-8)}`,
+            action: {
+              label: 'View on Solscan',
+              onClick: () => window.open(`https://solscan.io/tx/${transactionSignature}?cluster=devnet`, '_blank')
+            },
+          }
+        )
+      }
+
+    } catch (e: any) {
+      console.error('handleGenerateShareLink error:', e)
+      const errorMessage = e?.message || 'Failed to generate share link'
+      toast?.error?.(errorMessage)
+    } finally {
+      setShareStatus('')
+      setLoading(false)
+    }
   }
-}
 
   const handleRefresh = async () => {
     if (!walletAddress || !signMessage) {
       toast?.error?.('Wallet not ready')
       return
     }
-
-    // Check subscription limits
-    
 
     try {
       setRefreshing(true)
@@ -289,11 +314,11 @@ const handleGenerateShareLink = async () => {
       // Track the update usage
       await trackUpdate?.()
 
-      // Refresh all data
+      // Refresh all data (including chart with current period)
       await Promise.all([
         fetchPortfolioData?.(),
         fetchWalletPositionsData?.(),
-        fetchWalletChartData?.()
+        fetchWalletChartData?.(selectedPeriod) // Use selected period
       ])
 
       toast?.success?.('Portfolio refreshed successfully!')
@@ -321,12 +346,12 @@ const handleGenerateShareLink = async () => {
       fetchSubscription()
       fetchPortfolioData()
       fetchWalletPositionsData()
-      fetchWalletChartData()
+      fetchWalletChartData(selectedPeriod) // Use selected period
     }
-  }, [connected, walletAddress, fetchSubscription, fetchPortfolioData, fetchWalletPositionsData, fetchWalletChartData])
+  }, [connected, walletAddress, fetchSubscription, fetchPortfolioData, fetchWalletPositionsData, fetchWalletChartData, selectedPeriod])
 
   return (
-    <div className="w-full bg-transparent antialiased relative overflow-hidden">
+    <div className="w-full bg-white antialiased relative overflow-hidden">
       <div className="p-6 mx-auto">
         {!connected ? (
           <ConnectWalletCard />
@@ -341,14 +366,14 @@ const handleGenerateShareLink = async () => {
                 <PortfolioLoading />
               ) : portfolio ? (
                 <div className="space-y-4">
-                  {/* Action Bar - Positioned at the top with subscription info and action buttons */}
-
-
-                  {/* Portfolio Card */}
+                  {/* Portfolio Card with period selector */}
                   <PortfolioCard
                     positions={positions}
                     chartData={chartData}
                     portfolio={portfolio}
+                    selectedPeriod={selectedPeriod} // NEW: Pass selected period
+                    isLoadingChart={chartLoading} // NEW: Pass chart loading state
+                    onPeriodChange={handlePeriodChange} // NEW: Pass period change handler
                     onRefresh={handleRefresh}
                     onShare={() => setShowShareModal(true)}
                     refreshing={refreshing}

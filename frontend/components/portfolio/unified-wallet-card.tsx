@@ -6,381 +6,628 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Plus, SlidersHorizontal, Camera } from 'lucide-react'
+import AssetAllocation from './asset-allocation'
 import Image from 'next/image'
+import { ScrollArea } from '../ui/scroll-area'
+import html2canvas from 'html2canvas'
 
-interface UnifiedWalletCardProps {
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+export type TimePeriod = '1h' | '8h' | '1d' | '1w' | '1m' | '6m' | '1y'
+
+interface ChartData {
+  chart_data?: {
+    attributes?: {
+      points?: [number, number][]
+    }
+  }
+}
+
+interface PositionChanges {
+  absolute_1d?: number
+  percent_1d?: number
+}
+
+interface Position {
+  token_symbol?: string
+  symbol?: string
+  name?: string
+  amount?: number
+  quantity?: number
+  value?: number
+  realized_pl?: number
+  unrealized_pl?: number
+  changes?: PositionChanges
+  icon_url?: string
+  icon?: string
+}
+
+interface ProcessedChartDataPoint {
+  time: string
+  value: number
+  fullDate: Date
+}
+
+interface TopAsset {
+  symbol: string
+  name: string
+  amount: number
+  value: number
+  change24h: number
+  icon: string
+  isLargeCard: boolean
+}
+
+interface MetricsData {
+  netChange: number
+  netChangePercent: number
+  totalValue: number
+}
+
+export interface UnifiedWalletCardProps {
   totalValue?: number
   pnlPercentage?: number
-  positions?: any[]
-  chartData?: any
+  positions?: Position[]
+  chartData?: ChartData
+  selectedPeriod?: TimePeriod
+  isLoadingChart?: boolean
+  logoAbstract?: any
   onRefresh?: () => void
   onShare?: () => void
+  onAddAsset?: () => void
+  onFilter?: () => void
+  onScreenshot?: () => void
+  onPeriodChange?: (period: TimePeriod) => void
 }
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+const toNumber = (value: any): number => {
+  const num = Number(value)
+  return isNaN(num) ? 0 : num
+}
+
+const processChartData = (
+  chartData?: ChartData,
+  samplingRate: number = 12
+): ProcessedChartDataPoint[] => {
+  const points = chartData?.chart_data?.attributes?.points || []
+  
+  if (points.length === 0) {
+    return []
+  }
+
+  return points
+    .filter((_, index) => index % samplingRate === 0)
+    .map(([timestamp, value]) => ({
+      time: new Date(timestamp * 1000).toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }),
+      value: toNumber(value),
+      fullDate: new Date(timestamp * 1000)
+    }))
+}
+
+const calculateMetrics = (positions: Position[], totalValue: number): MetricsData => {
+  const netChange = positions.reduce(
+    (sum, p) => sum + toNumber(p?.changes?.absolute_1d),
+    0
+  )
+  
+  const previousValue = totalValue - netChange
+  const netChangePercent = previousValue !== 0 ? (netChange / previousValue) * 100 : 0
+
+  return {
+    netChange,
+    netChangePercent,
+    totalValue
+  }
+}
+
+const getTopAssets = (positions: Position[], limit: number = 5): TopAsset[] => {
+  return [...positions]
+    .sort((a, b) => toNumber(b?.value) - toNumber(a?.value))
+    .slice(0, limit)
+    .map((asset, idx) => ({
+      symbol: asset?.token_symbol || asset?.symbol || 'UNKNOWN',
+      name: asset?.name || asset?.token_symbol || 'Unknown Token',
+      amount: toNumber(asset?.amount || asset?.quantity),
+      value: toNumber(asset?.value),
+      change24h: toNumber(asset?.changes?.percent_1d),
+      icon: asset?.icon_url || asset?.icon || '💰',
+      isLargeCard: idx === 2
+    }))
+}
+
+const formatCurrency = (value: number, decimals: number = 2): string => {
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  })
+}
+
+const formatPercentage = (value: number, decimals: number = 1): string => {
+  const sign = value >= 0 ? '+' : ''
+  return `${sign}${value.toFixed(decimals)}%`
+}
+
+const calculateRiskScore = (positions: Position[]): number => {
+  if (positions.length === 0) return 0
+  
+  const totalValue = positions.reduce((sum, p) => sum + toNumber(p?.value), 0)
+  if (totalValue === 0) return 0
+  
+  const concentration = positions.reduce((max, p) => {
+    const percentage = (toNumber(p?.value) / totalValue) * 100
+    return Math.max(max, percentage)
+  }, 0)
+  
+  const avgVolatility = positions.reduce((sum, p) => {
+    return sum + Math.abs(toNumber(p?.changes?.percent_1d))
+  }, 0) / positions.length
+  
+  const riskScore = Math.min(100, (concentration * 0.6) + (avgVolatility * 0.4))
+  
+  return riskScore
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 export default function UnifiedWalletCard({ 
   totalValue = 0, 
   pnlPercentage = 0, 
   positions = [],
-  chartData 
+  chartData,
+  selectedPeriod = '1d',
+  isLoadingChart = false,
+  logoAbstract,
+  onAddAsset,
+  onFilter,
+  onScreenshot,
+  onPeriodChange
 }: UnifiedWalletCardProps) {
   const isPositive = pnlPercentage >= 0
+  const processedChartData = React.useMemo(
+    () => processChartData(chartData),
+    [chartData]
+  )
+  const metrics = React.useMemo(
+    () => calculateMetrics(positions, totalValue),
+    [positions, totalValue]
+  )
+  const topAssets = React.useMemo(
+    () => getTopAssets(positions, 5),
+    [positions]
+  )
+  const riskScore = React.useMemo(
+    () => calculateRiskScore(positions),
+    [positions]
+  )
 
-  // Process chart data
-  const points = chartData?.chart_data?.attributes?.points || []
-  const samplingRate = 12
-  const data = points
-    .filter((_: any, index: number) => index % samplingRate === 0)
-    .map(([timestamp, value]: [number, number]) => ({
-      time: new Date(timestamp * 1000).toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }),
-      value,
-      fullDate: new Date(timestamp * 1000)
-    }))
+  const periods: TimePeriod[] = ['1h', '1d', '1w', '1m', '1y']
 
-  // Calculate metrics from positions
-  const realizedPL = positions.reduce((sum, p) => sum + (p?.realized_pl || 0), 0)
-  const unrealizedPL = positions.reduce((sum, p) => sum + (p?.unrealized_pl || 0), 0)
-  const netChange = positions.reduce((sum, p) => sum + (p?.changes?.absolute_1d || 0), 0)
-  const projectedGrowth = realizedPL + unrealizedPL + netChange
+  const handlePeriodClick = (period: TimePeriod) => {
+    if (onPeriodChange) {
+      onPeriodChange(period)
+    }
+  }
 
-  // Time period buttons
-  const periods = ['1h', '8h', '1d', '1w', '1m', '6m', '1y']
-  const [selectedPeriod, setSelectedPeriod] = React.useState('1d')
+  const cardRef = React.useRef<HTMLDivElement>(null)
 
-  // Get top 5 assets by value
-  const topAssets = [...positions]
-    .sort((a, b) => (b?.value || 0) - (a?.value || 0))
-    .slice(0, 5)
-    .map((asset, idx) => ({
-      symbol: asset?.token_symbol || asset?.symbol || 'UNKNOWN',
-      name: asset?.name || asset?.token_symbol || 'Unknown Token',
-      amount: Number(asset?.amount || asset?.quantity || 0),
-      value: Number(asset?.value || 0),
-      change24h: Number(asset?.changes?.percent_1d || 0),
-      icon: asset?.icon_url || asset?.icon || '💰',
-      isLargeCard: idx === 2 // Make the 3rd card (ETH) larger with chart
-    }))
+  const handleScreenshot = async () => {
+    if (!cardRef.current) return
+    const canvas = await html2canvas(cardRef.current, { backgroundColor: null })
+    const imgData = canvas.toDataURL('image/png')
+    const link = document.createElement('a')
+    link.href = imgData
+    link.download = `wallet-card-${Date.now()}.png`
+    link.click()
+    if (typeof onScreenshot === 'function') onScreenshot()
+  }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-3xl overflow-hidden shadow-2xl">
-      {/* Left Side - Blue Card */}
-      <div className="lg:col-span-8 bg-[#004aad] text-white">
-        <div className="p-8">
-          {/* Header Section */}
-          <div className="flex items-start justify-between mb-8">
-            <div className="space-y-6">
-              {/* Title */}
-              <h2 className="text-white/90 text-lg font-medium">Wallet Value</h2>
+    <div ref={cardRef} className="relative rounded-[4rem] overflow-visible shadow-2xl">
+      {/* Base Layer - Black Panel (Full Width) */}
+      <div className="bg-[#1a1a1a] rounded-[4rem]">
+        <div className="grid grid-cols-1 lg:grid-cols-12">
+          {/* Left placeholder for blue overlay */}
+          <div className="lg:col-span-8 h-full min-h-[900px]"></div>
+          
+          {/* Right Side - Dark Panel */}
+          <div className="lg:col-span-4 text-white p-6">
+            <div className="h-full flex flex-col">
+              {/* Asset Allocation Pie Chart */}
+              <AssetAllocationSection positions={positions} totalValue={totalValue} />
               
-              {/* Main Value */}
-              <div>
-                <h1 className="text-7xl font-bold mb-2">
-                  ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </h1>
-                
-                {/* Percentage Badge */}
-                <Badge 
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-base font-semibold border-0 ${
-                    isPositive ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
-                  }`}
-                >
-                  <span className="text-xl">⊙</span>
-                  {isPositive ? '+' : ''}{(pnlPercentage * 100).toFixed(1)}%
-                </Badge>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3">
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="h-10 w-10 rounded-xl bg-white/10 hover:bg-white/20 text-white border-none"
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="h-10 w-10 rounded-xl bg-white/10 hover:bg-white/20 text-white border-none"
-              >
-                <SlidersHorizontal className="h-5 w-5" />
-              </Button>
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="h-10 w-10 rounded-xl bg-white/10 hover:bg-white/20 text-white border-none"
-              >
-                <Camera className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Metrics Row */}
-          <div className="grid grid-cols-4 gap-6 mb-8">
-            <div>
-              <p className="text-white/60 text-sm mb-1">Realized PL</p>
-              <p className="text-2xl font-bold">
-                +${realizedPL.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-              <p className="text-green-400 text-xs mt-1">
-                ⊙ +4.9% Today
-              </p>
-            </div>
-
-            <div>
-              <p className="text-white/60 text-sm mb-1">Unrealized PL</p>
-              <p className="text-2xl font-bold">
-                -${Math.abs(unrealizedPL).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-              <p className="text-red-400 text-xs mt-1">
-                ⊙ -2.1% Today
-              </p>
-            </div>
-
-            <div>
-              <p className="text-white/60 text-sm mb-1">Net Change</p>
-              <p className="text-2xl font-bold">
-                +${netChange.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-              <p className="text-green-400 text-xs mt-1">
-                ⊙ +0.8% Today
-              </p>
-            </div>
-
-            <div>
-              <p className="text-white/60 text-sm mb-1">Projected Growth</p>
-              <p className="text-2xl font-bold">
-                +${projectedGrowth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-              <p className="text-green-400 text-xs mt-1">
-                ⊙ +2.9% Today
-              </p>
-            </div>
-          </div>
-
-          {/* Time Period Selector */}
-          <div className="flex items-center justify-center gap-3 mb-6">
-            {periods.map((period) => (
-              <Button
-                key={period}
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedPeriod(period)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  selectedPeriod === period
-                    ? 'bg-white/20 text-white'
-                    : 'bg-transparent text-white/60 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                {period}
-              </Button>
-            ))}
-          </div>
-
-          {/* Chart Area */}
-          <div className="h-[400px] relative">
-            {/* Bar chart background effect */}
-            <div className="absolute inset-0 opacity-30">
-              <div className="flex items-end justify-between h-full px-2 gap-1">
-                {Array.from({ length: 80 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 bg-white/40 rounded-t-sm"
-                    style={{
-                      height: `${Math.random() * 100}%`,
-                      minHeight: '10%'
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Line Chart Overlay */}
-            <div className="relative h-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-                  <defs>
-                    <linearGradient id="colorValue1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#FFA500" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#FFA500" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorValue2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#FFFFFF" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#FFFFFF" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  
-                  {/* White line */}
-                  <Area 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="#FFFFFF" 
-                    strokeWidth={2.5}
-                    fill="url(#colorValue2)" 
-                    dot={false}
-                  />
-                  
-                  {/* Orange line */}
-                  <Area 
-                    type="monotone" 
-                    dataKey={(d) => d.value * 0.95} 
-                    stroke="#FFA500" 
-                    strokeWidth={2.5}
-                    fill="url(#colorValue1)" 
-                    dot={false}
-                  />
-                  
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(0, 74, 173, 0.95)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '12px',
-                      boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
-                      color: '#fff'
-                    }}
-                    labelStyle={{ color: '#fff', fontWeight: 600 }}
-                    formatter={(value: any) => [`$${value.toFixed(2)}`, 'Value']}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-
-              {/* Peak indicator */}
-              <div 
-                className="absolute bg-white rounded-full p-2 shadow-lg"
-                style={{ top: '20%', right: '35%' }}
-              >
-                <div className="w-3 h-3 rounded-full bg-[#004aad]" />
-              </div>
-              <div 
-                className="absolute bg-white px-3 py-1.5 rounded-lg shadow-lg text-[#004aad] font-bold text-sm"
-                style={{ top: '15%', right: '30%' }}
-              >
-                +$10,859.48
-                <div className="text-xs font-normal">⊙ 15.4%</div>
-              </div>
+              {/* Top Assets */}
+              <TopAssetsSection assets={topAssets} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Right Side - Dark Panel with Top Assets */}
-      <div className="lg:col-span-4 bg-[#1a1a1a] text-white">
-        <div className="p-6 h-full flex flex-col">
-          {/* Portfolio Risk Score Section */}
-          <div className="mb-8">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-2xl font-bold mb-1">Portfolio</h3>
-                <h3 className="text-2xl font-bold">Risk Score</h3>
-              </div>
-              <div className="text-right text-xs text-gray-400">
-                <p>Updated:</p>
-                <p>Just Now</p>
-              </div>
-            </div>
+      {/* Overlay Layer - Blue Card */}
+      <div className="absolute top-0  h-full  left-0 lg:w-[66.666667%] w-full">
+        <div className="bg-[#004aad] h-full text-white rounded-tl-[4rem] rounded-tr-4xl rounded-[4rem] lg:rounded-tr-[4rem] lg:rounded-br-[4rem] rounded-bl-[4rem]">
+          <div className="p-8">
+            {/* Header Section */}
+            <div className="flex items-start justify-between mb-8">
+              <div className="space-y-6">
+                <div className='flex flex-col items-start'>
+                  {logoAbstract && (
+                    <Image src={logoAbstract} alt='logo' height={90} width={90} />
+                  )}
+                </div>
 
-            {/* Risk Score Bar */}
-            <div className="mb-2">
-              <div className="h-3 bg-gray-800 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-red-500 via-orange-400 to-green-500" style={{ width: '30%' }} />
-              </div>
-            </div>
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>Low Risk</span>
-              <span>High Risk</span>
-            </div>
-          </div>
+                <div>
+                  <h1 className="text-7xl font-bold mb-2">
+                    ${formatCurrency(totalValue)}
+                  </h1>
 
-          {/* Top Assets Section */}
-          <div className="flex-1 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-semibold">Top Assets</h4>
-              <button className="text-sm text-gray-400 hover:text-white">View All</button>
-            </div>
-
-            {/* Asset Cards Grid */}
-            <div className="grid grid-cols-2 gap-3 overflow-y-auto flex-1 pr-2">
-              {topAssets.map((asset, idx) => {
-                const isPositiveChange = asset.change24h >= 0
-                
-                return (
-                  <div 
-                    key={idx} 
-                    className={`rounded-xl p-4 transition-all hover:scale-[1.02] ${
-                      asset.isLargeCard 
-                        ? 'col-span-2 bg-gradient-to-br from-red-500 to-red-600' 
-                        : 'bg-[#252525]'
+                  <Badge
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 text-base font-semibold border-0 ${
+                      isPositive
+                        ? 'bg-green-500/20 text-green-300'
+                        : 'bg-red-500/20 text-red-300'
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
-                          {asset.icon.startsWith('http') ? (
-                            <img src={asset.icon} alt={asset.symbol} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-xl">{asset.icon}</span>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold">{asset.symbol}</p>
-                          <p className="text-xs text-gray-400">{asset.name}</p>
-                        </div>
-                      </div>
-                    </div>
+                    <span className="text-xl">⊙</span>
+                    {formatPercentage(pnlPercentage * 100)}
+                  </Badge>
+                </div>
+              </div>
 
-                    <div className="space-y-1">
-                      <p className="text-2xl font-bold">
-                        {asset.amount > 0.01 
-                          ? asset.amount.toFixed(2) 
-                          : asset.amount.toFixed(6)}
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        ${asset.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      <div className={`flex items-center gap-1 text-xs font-semibold ${
-                        isPositiveChange ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        <span>⊙</span>
-                        <span>{isPositiveChange ? '+' : ''}{(asset.change24h * 100).toFixed(2)}%</span>
-                      </div>
-                    </div>
-
-                    {/* Mini chart for the large card */}
-                    {asset.isLargeCard && (
-                      <div className="mt-4 h-20 opacity-60">
-                        <div className="flex items-end justify-between h-full gap-[2px]">
-                          {Array.from({ length: 40 }).map((_, i) => (
-                            <div
-                              key={i}
-                              className="flex-1 bg-white/40 rounded-t-sm"
-                              style={{
-                                height: `${Math.random() * 100}%`,
-                                minHeight: '20%'
-                              }}
-                            />
-                          ))}
-                        </div>
-                        {/* Line overlay */}
-                        <svg className="w-full h-16 -mt-16" viewBox="0 0 100 50" preserveAspectRatio="none">
-                          <polyline
-                            fill="none"
-                            stroke="rgba(255,255,255,0.8)"
-                            strokeWidth="1.5"
-                            points={Array.from({ length: 20 }, (_, i) => `${i * 5},${25 + Math.sin(i) * 15}`).join(' ')}
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-10 w-10 rounded-xl bg-white/10 hover:bg-white/20 text-white border-none"
+                  onClick={handleScreenshot}
+                  title="Take Screenshot"
+                >
+                  <Camera className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
+
+            {/* Metrics Row */}
+            <div className="grid grid-cols-3 gap-6 mb-8 ">
+              {/* Total Value */}
+              <div className='bg-white/10 rounded-2xl p-5 px-7'>
+                <p className="text-white text-sm mb-1">Total Value</p>
+                <p className="text-2xl font-bold">
+                  ${formatCurrency(metrics.totalValue)}
+                </p>
+                <p className={`text-xs mt-1 ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                  ⊙ {formatPercentage(pnlPercentage * 100)} 24h
+                </p>
+              </div>
+
+              {/* 24h Change */}
+              <div className='bg-white/10 rounded-2xl p-5 px-7'>
+                <p className="text-white text-sm mb-1">24h Change</p>
+                <p className="text-2xl font-bold">
+                  {metrics.netChange >= 0 ? '+' : ''}${formatCurrency(Math.abs(metrics.netChange))}
+                </p>
+                <p className={`text-xs mt-1 ${metrics.netChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  ⊙ {formatPercentage(metrics.netChangePercent)} Today
+                </p>
+              </div>
+
+              {/* Asset Count */}
+              <div className='bg-white/10 rounded-2xl p-5 px-7'>
+                <p className="text-white text-sm mb-1">Assets</p>
+                <p className="text-2xl font-bold">
+                  {positions.length}
+                </p>
+                <p className="text-white/40 text-xs mt-1">
+                  {positions.length === 1 ? 'token' : 'tokens'} held
+                </p>
+              </div>
+            </div>
+
+            {/* Time Period Selector */}
+            <div className="flex items-center justify-center gap-3 mb-6">
+              {periods.map((period) => (
+                <Button
+                  key={period}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handlePeriodClick(period)}
+                  disabled={isLoadingChart}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    selectedPeriod === period
+                      ? 'bg-white/20 text-white'
+                      : 'bg-transparent text-white/60 hover:bg-white/10 hover:text-white'
+                  } ${isLoadingChart ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {period}
+                </Button>
+              ))}
+            </div>
+
+            {/* Chart Area */}
+            <ChartSection data={processedChartData} isLoading={isLoadingChart} />
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// Sub-Components
+// ============================================================================
+
+interface ChartSectionProps {
+  data: ProcessedChartDataPoint[]
+  isLoading?: boolean
+}
+
+const ChartSection: React.FC<ChartSectionProps> = ({ data, isLoading = false }) => {
+  if (isLoading) {
+    return (
+      <div className="h-[400px] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white" />
+          <p className="text-white/60">Loading chart data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="h-[400px] flex items-center justify-center text-white/60">
+        <p>No chart data available</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-[500px] relative  w-full">
+      {/* Bar chart background effect */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="flex items-end justify-between h-full px-2 gap-1">
+          {Array.from({ length: 80 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex-1 bg-white/40 rounded-t-sm"
+              style={{
+                height: `${Math.random() * 100}%`,
+                minHeight: '10%'
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Line Chart Overlay */}
+      <div className="relative h-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+            <defs>
+              <linearGradient id="colorValue1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#FFA500" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#FFA500" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorValue2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#FFFFFF" stopOpacity={0.4}/>
+                <stop offset="95%" stopColor="#FFFFFF" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            
+            <Area 
+              type="monotone" 
+              dataKey="value" 
+              stroke="#FFFFFF" 
+              strokeWidth={2.5}
+              fill="url(#colorValue2)" 
+              dot={false}
+            />
+            
+            <Area 
+              type="monotone" 
+              dataKey={(d) => d.value * 0.95} 
+              stroke="#FFA500" 
+              strokeWidth={2.5}
+              fill="url(#colorValue1)" 
+              dot={false}
+            />
+            
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'rgba(0, 74, 173, 0.95)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '12px',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
+                color: '#fff'
+              }}
+              labelStyle={{ color: '#fff', fontWeight: 600 }}
+              formatter={(value: any) => [`$${toNumber(value).toFixed(2)}`, 'Value']}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+
+        <PeakIndicator data={data} />
+      </div>
+    </div>
+  )
+}
+
+interface PeakIndicatorProps {
+  data: ProcessedChartDataPoint[]
+}
+
+const PeakIndicator: React.FC<PeakIndicatorProps> = ({ data }) => {
+  if (data.length === 0) return null
+
+  const peak = data.reduce((max, point) => 
+    point.value > max.value ? point : max
+  , data[0])
+
+  const firstValue = data[0].value
+  const peakChange = peak.value - firstValue
+  const peakPercentage = ((peakChange / firstValue) * 100)
+
+  return (
+    <>
+      <div 
+        className="absolute bg-white rounded-full p-2 shadow-lg"
+        style={{ top: '20%', right: '35%' }}
+      >
+        <div className="w-3 h-3 rounded-full  bg-[#004aad]" />
+      </div>
+      <div 
+        className="absolute bg-white px-3 py-1.5 rounded-lg shadow-lg text-[#004aad] font-bold text-sm"
+        style={{ top: '15%', right: '30%' }}
+      >
+        {peakChange >= 0 ? '+' : ''}${formatCurrency(peakChange)}
+        <div className="text-xs font-normal">
+          ⊙ {formatPercentage(peakPercentage)}
+        </div>
+      </div>
+    </>
+  )
+}
+
+interface AssetAllocationSectionProps {
+  positions: Position[]
+  totalValue: number
+}
+
+const AssetAllocationSection: React.FC<AssetAllocationSectionProps> = ({ positions, totalValue }) => {
+  return (
+    <div className="mb-8">
+      <AssetAllocation positions={positions} totalValue={totalValue} />
+    </div>
+  )
+}
+
+interface TopAssetsSectionProps {
+  assets: TopAsset[]
+}
+
+const TopAssetsSection: React.FC<TopAssetsSectionProps> = ({ assets }) => {
+  if (assets.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-gray-400">
+        <p>No assets found</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-lg font-semibold">Top Assets</h4>
+        <button className="text-sm text-gray-400 hover:text-white transition-colors">
+          View All
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 overflow-y-auto flex-1 pr-2">
+        {assets.map((asset, idx) => (
+          <ScrollArea className="h-full max-h-[320px] pr-2">
+
+          <AssetCard key={`${asset.symbol}-${idx}`} asset={asset} />
+          </ScrollArea>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+interface AssetCardProps {
+  asset: TopAsset
+}
+
+const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
+  const isPositiveChange = asset.change24h >= 0
+
+  return (
+    <div 
+      className={`rounded-2xl p-3 transition-all h-fit ${
+        asset.isLargeCard 
+          ? 'col-span-2 bg-gradient-to-br from-purple-500 to-purple-600 text-white' 
+          : 'bg-[#252525]'
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+          {asset.icon.startsWith('http') ? (
+            <img 
+              src={asset.icon} 
+              alt={asset.symbol} 
+              className="w-full h-full object-cover" 
+            />
+          ) : (
+            <span className="text-lg">{asset.icon}</span>
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-bold">{asset.symbol}</p>
+          <p className="text-[10px] text-gray-400 truncate">{asset.name}</p>
+        </div>
+      </div>
+
+      <div className="space-y-0.5">
+        <p className="text-xl font-bold">
+          {asset.amount > 0.01 
+            ? asset.amount.toFixed(2) 
+            : asset.amount.toFixed(3)}
+        </p>
+        <p className="text-xs text-gray-400">
+          ${formatCurrency(asset.value)}
+        </p>
+        <div
+          className={`flex items-center gap-1 text-[10px] font-semibold ${
+            isPositiveChange ? 'text-green-400' : 'text-red-400'
+          }`}
+        >
+          <span>⊙</span>
+          <span>{formatPercentage(asset.change24h, 3)}</span>
+        </div>
+      </div>
+
+      {asset.isLargeCard && <MiniChart />}
+    </div>
+  )
+}
+
+const MiniChart: React.FC = () => {
+  return (
+    <div className="mt-3 h-16 opacity-60">
+      <div className="flex items-end justify-between h-full gap-[2px]">
+        {Array.from({ length: 40 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex-1 bg-white/40 rounded-t-sm"
+            style={{
+              height: `${Math.random() * 100}%`,
+              minHeight: '20%'
+            }}
+          />
+        ))}
+      </div>
+      <svg className="w-full h-14 -mt-14" viewBox="0 0 100 50" preserveAspectRatio="none">
+        <polyline
+          fill="none"
+          stroke="rgba(255,255,255,0.8)"
+          strokeWidth="1.5"
+          points={Array.from({ length: 20 }, (_, i) => 
+            `${i * 5},${25 + Math.sin(i) * 15}`
+          ).join(' ')}
+        />
+      </svg>
     </div>
   )
 }

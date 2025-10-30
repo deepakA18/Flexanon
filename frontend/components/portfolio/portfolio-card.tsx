@@ -5,10 +5,20 @@ import type { PortfolioData } from "./types"
 import UnifiedWalletCard from "./unified-wallet-card"
 import { RefreshCw, Share2 } from "lucide-react"
 
+// Add TimePeriod type
+export type TimePeriod = '1h' | '8h' | '1d' | '1w' | '1m' | '6m' | '1y'
+
 interface PortfolioCardProps {
   portfolio: PortfolioData
   positions: any[]
   chartData: any
+  
+  // NEW: Period selector props
+  selectedPeriod?: TimePeriod
+  isLoadingChart?: boolean
+  onPeriodChange?: (period: TimePeriod) => void
+  
+  // Existing props
   onShare: () => void
   onRefresh: () => void
   loading: boolean
@@ -19,13 +29,16 @@ export default function PortfolioCard({
   portfolio, 
   positions, 
   chartData, 
+  selectedPeriod = '1d', // Default period
+  isLoadingChart = false,
+  onPeriodChange,
   onShare, 
   onRefresh, 
   loading, 
   refreshing 
 }: PortfolioCardProps) {
   return (
-    <div className="min-h-screen bg-white p-4 md:p-6">
+    <div className="min-h-screen bg-white] p-4 md:p-6">
       <div className="max-w-[1400px] mx-auto space-y-6">
 
         {/* Header with Action Buttons */}
@@ -58,9 +71,27 @@ export default function PortfolioCard({
         {/* Main Unified Card */}
         <UnifiedWalletCard
           totalValue={portfolio?.total_value}
-          pnlPercentage={portfolio?.pnl_percentage}
-          positions={positions}
+          pnlPercentage={portfolio?.pnl_percentage / 100} // Convert to decimal (e.g., -1.14 → -0.0114)
+          positions={positions.map(pos => ({
+            token_symbol: pos.symbol,
+            symbol: pos.symbol,
+            name: pos.name,
+            amount: parseFloat(pos.quantity || '0'),
+            quantity: parseFloat(pos.quantity || '0'),
+            value: pos.value,
+            realized_pl: 0,
+            unrealized_pl: pos.changes?.absolute_1d || 0,
+            changes: {
+              absolute_1d: pos.changes?.absolute_1d || 0,
+              percent_1d: (pos.changes?.percent_1d || 0) / 100 // Convert to decimal
+            },
+            icon_url: pos.icon_url,
+            icon: pos.icon_url
+          }))}
           chartData={chartData}
+          selectedPeriod={selectedPeriod} // NEW: Pass selected period
+          isLoadingChart={isLoadingChart} // NEW: Pass chart loading state
+          onPeriodChange={onPeriodChange} // NEW: Pass period change handler
           onRefresh={onRefresh}
           onShare={onShare}
         />

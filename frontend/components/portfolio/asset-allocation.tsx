@@ -61,11 +61,11 @@ export default function AssetAllocation({ positions = [], totalValue = 0 }: Asse
   }
 
   return (
-    <Card className='bg-white'>
+    <Card className='bg-transparent border-none shadow-none text-white'>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-primary">
+        <CardTitle className="flex items-center gap-2 text-white">
           <PieChartIcon className="w-4 h-4" />
-          <span className="text-sm font-semibold text-primary">Asset Allocation</span>
+          <span className="text-sm font-semibold text-white">Asset Allocation</span>
         </CardTitle>
       </CardHeader>
 
@@ -119,11 +119,11 @@ export default function AssetAllocation({ positions = [], totalValue = 0 }: Asse
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-primary font-medium truncate">
+                  <span className="text-white font-medium truncate">
                     {item.name}
                   </span>
                 </div>
-                <span className="text-primary font-semibold ml-2">
+                <span className="text-white font-semibold ml-2">
                   {item.percentage.toFixed(1)}%
                 </span>
               </div>
