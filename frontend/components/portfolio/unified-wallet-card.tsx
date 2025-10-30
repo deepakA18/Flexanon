@@ -261,9 +261,9 @@ export default function UnifiedWalletCard({
             <div className="flex items-start justify-between mb-8">
               <div className="space-y-6">
                 <div className='flex flex-col items-start'>
-                  {logoAbstract && (
+                 
                     <Image src={logoAbstract} alt='logo' height={90} width={90} />
-                  )}
+               
                 </div>
 
                 <div>
@@ -555,7 +555,7 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
     <div 
       className={`rounded-2xl p-3 transition-all h-fit ${
         asset.isLargeCard 
-          ? 'col-span-2 bg-[#252525] text-white' 
+          ? ' bg-[#252525] text-white' 
           : 'bg-[#252525]'
       }`}
     >
