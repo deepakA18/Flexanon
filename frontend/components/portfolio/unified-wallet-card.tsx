@@ -5,12 +5,19 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Plus, SlidersHorizontal, Camera } from 'lucide-react'
+import { Plus, SlidersHorizontal, Camera, Download, Share2, Copy } from 'lucide-react'
 import AssetAllocation from './asset-allocation'
 import Image from 'next/image'
 import { ScrollArea } from '../ui/scroll-area'
-import html2canvas from 'html2canvas'
+import { toPng } from 'html-to-image' 
 import { logoAbstract } from '@/public'
+import { toast } from 'sonner'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 // ============================================================================
 // Type Definitions
@@ -118,7 +125,6 @@ const calculateMetrics = (positions: Position[], totalValue: number): MetricsDat
     (sum, p) => sum + toNumber(p?.changes?.absolute_1d),
     0
   )
-  console.log(netChange);
   const previousValue = totalValue - netChange
   const netChangePercent = previousValue !== 0 ? (netChange / previousValue) * 100 : 0
 
@@ -177,6 +183,63 @@ const calculateRiskScore = (positions: Position[]): number => {
 }
 
 // ============================================================================
+// Screenshot Utilities (UPDATED)
+// ============================================================================
+
+const captureElement = async (element: HTMLElement): Promise<string> => {
+  try {
+    const dataUrl = await toPng(element, {
+      quality: 1.0,
+      pixelRatio: 2, // 2x for high quality
+      cacheBust: true,
+      style: {
+        transform: 'scale(1)',
+        transformOrigin: 'top left',
+      },
+      // Filter out problematic elements
+      filter: (node) => {
+        // Exclude certain elements if needed
+        return node.tagName !== 'IFRAME'
+      }
+    })
+    return dataUrl
+  } catch (error) {
+    console.error('Screenshot capture failed:', error)
+    throw error
+  }
+}
+
+const downloadImage = (dataUrl: string, filename: string) => {
+  const link = document.createElement('a')
+  link.href = dataUrl
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+const copyImageToClipboard = async (dataUrl: string): Promise<boolean> => {
+  try {
+    const blob = await (await fetch(dataUrl)).blob()
+    await navigator.clipboard.write([
+      new ClipboardItem({ 'image/png': blob })
+    ])
+    return true
+  } catch (error) {
+    console.error('Failed to copy to clipboard:', error)
+    return false
+  }
+}
+
+const shareToTwitter = (totalValue: number, pnlPercentage: number) => {
+  const isPositive = pnlPercentage >= 0
+  const emoji = isPositive ? '📈' : '📉'
+  const text = `${emoji} My portfolio: $${formatCurrency(totalValue)} (${formatPercentage(pnlPercentage * 100)}) via @FlexAnon`
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`
+  window.open(twitterUrl, '_blank', 'width=550,height=420')
+}
+
+// ============================================================================
 // Main Component
 // ============================================================================
 
@@ -192,6 +255,7 @@ export default function UnifiedWalletCard({
   onScreenshot,
   onPeriodChange
 }: UnifiedWalletCardProps) {
+  const [isCapturing, setIsCapturing] = React.useState(false)
   const isPositive = pnlPercentage >= 0
   const processedChartData = React.useMemo(
     () => processChartData(chartData),
@@ -220,15 +284,49 @@ export default function UnifiedWalletCard({
 
   const cardRef = React.useRef<HTMLDivElement>(null)
 
-  const handleScreenshot = async () => {
+  const handleScreenshot = async (action: 'download' | 'copy' | 'twitter') => {
     if (!cardRef.current) return
-    const canvas = await html2canvas(cardRef.current, { backgroundColor: null })
-    const imgData = canvas.toDataURL('image/png')
-    const link = document.createElement('a')
-    link.href = imgData
-    link.download = `wallet-card-${Date.now()}.png`
-    link.click()
-    if (typeof onScreenshot === 'function') onScreenshot()
+    
+    setIsCapturing(true)
+    toast.info('Capturing screenshot...', { duration: 1000 })
+    
+    try {
+      const dataUrl = await captureElement(cardRef.current)
+      
+      switch (action) {
+        case 'download':
+          const timestamp = new Date().toISOString().split('T')[0]
+          downloadImage(dataUrl, `flexanon-portfolio-${timestamp}.png`)
+          toast.success('Screenshot downloaded!')
+          break
+          
+        case 'copy':
+          const copied = await copyImageToClipboard(dataUrl)
+          if (copied) {
+            toast.success('Screenshot copied to clipboard!')
+          } else {
+            // Fallback: download if copy fails
+            downloadImage(dataUrl, `flexanon-portfolio-${Date.now()}.png`)
+            toast.info('Downloaded instead (clipboard not supported)')
+          }
+          break
+          
+        case 'twitter':
+          // First download the image
+          downloadImage(dataUrl, `flexanon-portfolio-${Date.now()}.png`)
+          // Then open Twitter share dialog
+          shareToTwitter(totalValue, pnlPercentage)
+          toast.success('Opening Twitter... Attach the downloaded image!')
+          break
+      }
+      
+      if (onScreenshot) onScreenshot()
+    } catch (error) {
+      console.error('Screenshot failed:', error)
+      toast.error('Failed to capture screenshot')
+    } finally {
+      setIsCapturing(false)
+    }
   }
 
   return (
@@ -260,9 +358,7 @@ export default function UnifiedWalletCard({
             <div className="flex items-start justify-between mb-8">
               <div className="space-y-6">
                 <div className='flex flex-col items-start'>
-                 
-                    <Image src={logoAbstract} alt='logo' height={90} width={90} />
-               
+                  <Image src={logoAbstract} alt='logo' height={90} width={90} />
                 </div>
 
                 <div>
@@ -283,18 +379,38 @@ export default function UnifiedWalletCard({
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-3">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-10 w-10 rounded-xl bg-white/10 hover:bg-white/20 text-white border-none"
-                  onClick={handleScreenshot}
-                  title="Take Screenshot"
-                >
-                  <Camera className="h-5 w-5" />
-                </Button>
-              </div>
+              {/* Screenshot Dropdown Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    disabled={isCapturing}
+                    className="h-10 w-10 rounded-xl bg-white/10 hover:bg-white/20 text-white border-none disabled:opacity-50"
+                    title="Screenshot Options"
+                  >
+                    {isCapturing ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                    ) : (
+                      <Camera className="h-5 w-5" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => handleScreenshot('download')}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleScreenshot('copy')}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy to Clipboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleScreenshot('twitter')}>
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Share to Twitter
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* Metrics Row */}
@@ -363,7 +479,7 @@ export default function UnifiedWalletCard({
 }
 
 // ============================================================================
-// Sub-Components
+// Sub-Components (Rest remains the same...)
 // ============================================================================
 
 interface ChartSectionProps {
@@ -528,14 +644,12 @@ const TopAssetsSection: React.FC<TopAssetsSectionProps> = ({ assets }) => {
     <div className="flex-1 overflow-hidden flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-lg font-semibold">Top Assets</h4>
-       
       </div>
 
       <div className="grid grid-cols-2 gap-2 overflow-y-auto flex-1 pr-2">
         {assets.map((asset, idx) => (
           <ScrollArea key={`${asset.symbol}-${idx}`} className="h-full max-h-[320px] pr-2">
-
-          <AssetCard  asset={asset} />
+            <AssetCard  asset={asset} />
           </ScrollArea>
         ))}
       </div>
@@ -549,7 +663,7 @@ interface AssetCardProps {
 
 const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
   const isPositiveChange = asset.change24h >= 0
-  console.log(asset);
+  
   return (
     <div 
       className={`rounded-2xl p-3 transition-all h-fit ${
@@ -562,7 +676,8 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
         <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
           {asset.icon.startsWith('http') ? (
             <Image 
-            height={50} width={50}
+              height={50} 
+              width={50}
               src={asset.icon} 
               alt={asset.symbol} 
               className="w-full h-full object-cover" 
@@ -595,37 +710,6 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset }) => {
           <span>{(Number(asset.change24h)*100).toFixed(3)}%</span>
         </div>
       </div>
-
-
-    </div>
-  )
-}
-
-const MiniChart: React.FC = () => {
-  return (
-    <div className="mt-3 h-16 opacity-60">
-      <div className="flex items-end justify-between h-full gap-[2px]">
-        {Array.from({ length: 40 }).map((_, i) => (
-          <div
-            key={i}
-            className="flex-1 bg-white/40 rounded-t-sm"
-            style={{
-              height: `${Math.random() * 100}%`,
-              minHeight: '20%'
-            }}
-          />
-        ))}
-      </div>
-      <svg className="w-full h-14 -mt-14" viewBox="0 0 100 50" preserveAspectRatio="none">
-        <polyline
-          fill="none"
-          stroke="rgba(255,255,255,0.8)"
-          strokeWidth="1.5"
-          points={Array.from({ length: 20 }, (_, i) => 
-            `${i * 5},${25 + Math.sin(i) * 15}`
-          ).join(' ')}
-        />
-      </svg>
     </div>
   )
 }
